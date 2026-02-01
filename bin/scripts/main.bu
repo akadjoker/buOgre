@@ -1,0 +1,13 @@
+include "camera_examples.bu";
+
+
+
+//example_fps_controller();
+//example_orbit_controller();
+//example_free_camera();
+
+//example_switch_controllers();
+
+example_third_person();
+
+//example_spring_presets();

@@ -1,0 +1,408 @@
+// ============================================================
+// SINBAD ANIMATION EXAMPLE
+// Demonstra sistema de animação com Sinbad (guerreiro com espadas)
+// ============================================================
+
+include "keys.bu";
+
+def main()
+{
+    print("=== Sinbad Animation Example ===");
+    print("Controls:");
+    print("  1 - Idle (parado)");
+    print("  2 - Run (correr)");
+    print("  3 - Dance (dançar)");
+    print("  4 - Slice Vertical (ataque vertical)");
+    print("  5 - Slice Horizontal (ataque horizontal)");
+    print("  WASD - Move Sinbad");
+    print("  Mouse - Rotate camera");
+
+    CreateEngine(1280, 720, "Sinbad Animation Demo", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    scene.setShadowTechnique(1);
+
+    var rootNode = scene.getRoot();
+
+    // Create ground
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+    groundNode.setPosition(0, 0, 0);
+
+    // Create light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 0.9);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(500, 300, 500);
+
+    // Create Sinbad
+    var sinbadEntity = scene.createEntity("Sinbad.mesh");
+    sinbadEntity.castShadows = true;
+    var sinbadNode = rootNode.createChild();
+    sinbadNode.attachObject(sinbadEntity);
+    sinbadNode.setPosition(0, 0, 0);
+    sinbadNode.setScale(3, 3, 3);  // Sinbad is small by default
+
+    // Get animation states
+    var animIdle = getAnimationState(sinbadEntity, "IdleBase");
+    var animTop = getAnimationState(sinbadEntity, "IdleTop");
+    var animRun = getAnimationState(sinbadEntity, "RunBase");
+    var animRunTop = getAnimationState(sinbadEntity, "RunTop");
+    var animDance = getAnimationState(sinbadEntity, "Dance");
+    var animSliceVertical = getAnimationState(sinbadEntity, "SliceVertical");
+    var animSliceHorizontal = getAnimationState(sinbadEntity, "SliceHorizontal");
+
+    // Start with idle animation
+    animIdle.enabled = true;
+    animIdle.loop = true;
+    animTop.enabled = true;
+    animTop.loop = true;
+
+    // Current animation state
+    var currentAnim = "idle";
+    var currentBase = animIdle;
+    var currentTop = animTop;
+
+    // Camera setup
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 50, 200);
+
+    // Third person camera controller
+    var tpController = ThirdPersonController(cameraNode, sinbadNode);
+    tpController.distance = 15.0;
+    tpController.springStiffness = 12.0;
+    tpController.springDamping = 0.85;
+    tpController.mouseSensitivity = 0.2;
+    tpController.setOffset(0, 8, 0);  // Olha para o topo do Sinbad
+    tpController.setDistanceLimits(5.0, 30.0);
+    tpController.setPitchLimits(-20, 60);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.3, 0.5, 0.7);
+
+    // Movement
+    var moveSpeed = 30.0;
+    var isMoving = false;
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    print("Sinbad ready! Press 1-5 to change animations");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // ========== ANIMATION CONTROL ==========
+
+        // Switch to Idle
+        if (isKeyPressed(KEY_1) && currentAnim != "idle")
+        {
+            currentBase.enabled = false;
+            currentTop.enabled = false;
+
+            animIdle.enabled = true;
+            animIdle.loop = true;
+            animIdle.setTimePosition(0);
+
+            animTop.enabled = true;
+            animTop.loop = true;
+            animTop.setTimePosition(0);
+
+            currentAnim = "idle";
+            currentBase = animIdle;
+            currentTop = animTop;
+            print("Animation: Idle");
+        }
+
+        // Switch to Run
+        if (isKeyPressed(KEY_2) && currentAnim != "run")
+        {
+            currentBase.enabled = false;
+            currentTop.enabled = false;
+
+            animRun.enabled = true;
+            animRun.loop = true;
+            animRun.setTimePosition(0);
+
+            animRunTop.enabled = true;
+            animRunTop.loop = true;
+            animRunTop.setTimePosition(0);
+
+            currentAnim = "run";
+            currentBase = animRun;
+            currentTop = animRunTop;
+            print("Animation: Run");
+        }
+
+        // Switch to Dance
+        if (isKeyPressed(KEY_3) && currentAnim != "dance")
+        {
+            currentBase.enabled = false;
+            currentTop.enabled = false;
+
+            animDance.enabled = true;
+            animDance.loop = true;
+            animDance.setTimePosition(0);
+
+            currentAnim = "dance";
+            currentBase = animDance;
+            currentTop = animDance;  // Dance uses same anim for top/bottom
+            print("Animation: Dance");
+        }
+
+        // Slice Vertical (one-shot attack)
+        if (isKeyPressed(KEY_4))
+        {
+            currentTop.enabled = false;
+
+            animSliceVertical.enabled = true;
+            animSliceVertical.loop = false;
+            animSliceVertical.setTimePosition(0);
+
+            currentTop = animSliceVertical;
+            currentAnim = "attack_v";
+            print("Animation: Slice Vertical!");
+        }
+
+        // Slice Horizontal (one-shot attack)
+        if (isKeyPressed(KEY_5))
+        {
+            currentTop.enabled = false;
+
+            animSliceHorizontal.enabled = true;
+            animSliceHorizontal.loop = false;
+            animSliceHorizontal.setTimePosition(0);
+
+            currentTop = animSliceHorizontal;
+            currentAnim = "attack_h";
+            print("Animation: Slice Horizontal!");
+        }
+
+        // Check if attack animation ended, return to idle top
+        if (currentAnim == "attack_v" || currentAnim == "attack_h")
+        {
+            if (currentTop.hasEnded())
+            {
+                currentTop.enabled = false;
+                animTop.enabled = true;
+                animTop.loop = true;
+                currentTop = animTop;
+                currentAnim = "idle";
+            }
+        }
+
+        // ========== MOVEMENT ==========
+
+        isMoving = false;
+        var speed = moveSpeed * deltaTime;
+
+        if (isKeyDown(KEY_W))
+        {
+            sinbadNode.moveForward(speed);
+            isMoving = true;
+        }
+        if (isKeyDown(KEY_S))
+        {
+            sinbadNode.moveBackward(speed);
+            isMoving = true;
+        }
+        if (isKeyDown(KEY_A))
+        {
+            sinbadNode.yaw(100.0 * deltaTime);
+        }
+        if (isKeyDown(KEY_D))
+        {
+            sinbadNode.yaw(-100.0 * deltaTime);
+        }
+
+        // Auto-switch to run animation when moving
+        if (isMoving && currentAnim == "idle")
+        {
+            currentBase.enabled = false;
+            animRun.enabled = true;
+            animRun.loop = true;
+            currentBase = animRun;
+            currentAnim = "run";
+        }
+        // Auto-switch to idle when stopped
+        if (!isMoving && currentAnim == "run")
+        {
+            currentBase.enabled = false;
+            animIdle.enabled = true;
+            animIdle.loop = true;
+            currentBase = animIdle;
+            currentAnim = "idle";
+        }
+
+        // ========== UPDATE ANIMATIONS ==========
+
+        // Update all active animations
+        if (currentBase.enabled)
+        {
+            currentBase.addTime(deltaTime);
+        }
+        if (currentTop.enabled && currentTop != currentBase)
+        {
+            currentTop.addTime(deltaTime);
+        }
+
+        // ========== CAMERA ==========
+
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Zoom
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            var newDist = tpController.distance - wheelMove * 2.0;
+            tpController.distance = newDist;
+        }
+
+        tpController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// ANIMATION BLENDING EXAMPLE
+// Demonstra transição suave entre animações
+// ============================================================
+
+def animation_blending_example()
+{
+    print("=== Animation Blending Example ===");
+    print("Press SPACE to blend between Idle and Dance");
+
+    CreateEngine(1280, 720, "Animation Blending", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    var rootNode = scene.getRoot();
+
+    // Create Sinbad
+    var sinbadEntity = scene.createEntity("Sinbad.mesh");
+    var sinbadNode = rootNode.createChild();
+    sinbadNode.attachObject(sinbadEntity);
+    sinbadNode.setPosition(0, 0, 0);
+    sinbadNode.setScale(3, 3, 3);
+
+    // Get animations
+    var animIdle = getAnimationState(sinbadEntity, "IdleBase");
+    var animDance = getAnimationState(sinbadEntity, "Dance");
+
+    // Setup blending
+    animIdle.enabled = true;
+    animIdle.loop = true;
+    animIdle.weight = 1.0;  // Idle começa com peso total
+
+    animDance.enabled = true;
+    animDance.loop = true;
+    animDance.weight = 0.0;  // Dance começa sem peso
+
+    var blendTarget = 0.0;  // 0 = Idle, 1 = Dance
+    var currentBlend = 0.0;
+    var blendSpeed = 2.0;   // Velocidade de transição
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+
+    var orbitController = OrbitController(cameraNode, 0, 10, 0);
+    orbitController.distance = 20.0;
+    orbitController.mouseSensitivity = 0.2;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.2, 0.3);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    print("Press SPACE to blend animations!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Toggle blend target
+        if (isKeyPressed(KEY_SPACE))
+        {
+            if (blendTarget == 0.0)
+            {
+                blendTarget = 1.0;
+                print("Blending to Dance...");
+            }
+            else
+            {
+                blendTarget = 0.0;
+                print("Blending to Idle...");
+            }
+        }
+
+        // Smooth blend transition
+        if (currentBlend != blendTarget)
+        {
+            if (currentBlend < blendTarget)
+            {
+                currentBlend = currentBlend + blendSpeed * deltaTime;
+                if (currentBlend > blendTarget) currentBlend = blendTarget;
+            }
+            else
+            {
+                currentBlend = currentBlend - blendSpeed * deltaTime;
+                if (currentBlend < blendTarget) currentBlend = blendTarget;
+            }
+
+            // Update animation weights
+            animIdle.weight = 1.0 - currentBlend;
+            animDance.weight = currentBlend;
+        }
+
+        // Update animations
+        animIdle.addTime(deltaTime);
+        animDance.addTime(deltaTime);
+
+        // Camera
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = mouseX - lastMouseX;
+        var mouseDeltaY = mouseY - lastMouseY;
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        if (isMouseButtonDown(MOUSE_LEFT))
+        {
+            orbitController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+        }
+        else
+        {
+            orbitController.update(deltaTime, 0, 0);
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}

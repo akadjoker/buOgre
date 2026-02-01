@@ -1,0 +1,449 @@
+// ============================================================
+// SINBAD WITH SWORD EFFECTS
+// Demonstra Ribbon Trails e Particle Systems
+// ============================================================
+
+include "keys.bu";
+
+def main()
+{
+    print("=== Sinbad Sword Effects Demo ===");
+    print("Controls:");
+    print("  4 - Slice Vertical + Sword Trail");
+    print("  5 - Slice Horizontal + Impact Particles");
+    print("  WASD - Move");
+    print("  Right Mouse - Rotate Camera");
+
+    CreateEngine(1280, 720, "Sinbad Effects", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    scene.setShadowTechnique(1);
+
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 0.9);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(500, 300, 500);
+
+    // Sinbad
+    var sinbadEntity = scene.createEntity("Sinbad.mesh");
+    sinbadEntity.castShadows = true;
+    var sinbadNode = rootNode.createChild();
+    sinbadNode.attachObject(sinbadEntity);
+    sinbadNode.setPosition(0, 0, 0);
+    sinbadNode.setScale(3, 3, 3);
+
+    // ========== RIBBON TRAIL PARA ESPADAS ==========
+
+    // Criar ribbon trail
+    var swordTrail = createRibbonTrail(scene, "SwordTrail");
+
+    // Configurar aparência
+    swordTrail.setMaterialName("Examples/LightRibbonTrail");  // Material brilhante
+    swordTrail.setTrailLength(30.0);  // Comprimento da trilha
+    swordTrail.setMaxChainElements(100);  // Número de segmentos
+
+    // Criar nós para as mãos do Sinbad (onde as espadas estarão)
+    var leftHandNode = sinbadNode.createChild();
+    var rightHandNode = sinbadNode.createChild();
+
+    // Posicionar nas mãos (ajustar conforme skeleton do Sinbad)
+    leftHandNode.setPosition(-1.5, 4.0, 1.0);
+    rightHandNode.setPosition(1.5, 4.0, 1.0);
+
+    // Adicionar nós ao ribbon trail
+    swordTrail.addNode(leftHandNode);
+    swordTrail.addNode(rightHandNode);
+
+    // Configurar cores do trail (azul brilhante para espada esquerda)
+    swordTrail.setInitialColour(0, 0.3, 0.5, 1.0, 1.0);  // Azul inicial
+    swordTrail.setColourChange(0, 0.0, 0.0, 0.0, -0.5);  // Fade out
+    swordTrail.setInitialWidth(0, 0.8);  // Largura
+
+    // Configurar cores para espada direita (vermelho)
+    swordTrail.setInitialColour(1, 1.0, 0.3, 0.3, 1.0);  // Vermelho inicial
+    swordTrail.setColourChange(1, 0.0, 0.0, 0.0, -0.5);  // Fade out
+    swordTrail.setInitialWidth(1, 0.8);
+
+    // Anexar ribbon trail à cena
+    var trailNode = rootNode.createChild();
+    trailNode.attachObject(swordTrail);
+
+    // ========== PARTICLE SYSTEM PARA IMPACTOS ==========
+
+    // Criar sistema de partículas (usando template do Ogre)
+    var impactParticles = createParticleSystem(scene, "ImpactEffect", "Examples/Smoke");
+    impactParticles.emitting = false;  // Começar desligado
+
+    var particleNode = rootNode.createChild();
+    particleNode.attachObject(impactParticles);
+    particleNode.setPosition(0, 5, 5);  // Posição inicial
+
+    // ========== ANIMATIONS ==========
+
+    var animIdle = getAnimationState(sinbadEntity, "IdleBase");
+    var animTop = getAnimationState(sinbadEntity, "IdleTop");
+    var animSliceV = getAnimationState(sinbadEntity, "SliceVertical");
+    var animSliceH = getAnimationState(sinbadEntity, "SliceHorizontal");
+
+    animIdle.enabled = true;
+    animIdle.loop = true;
+    animTop.enabled = true;
+    animTop.loop = true;
+
+    var currentBase = animIdle;
+    var currentTop = animTop;
+    var isAttacking = false;
+    var trailActive = false;
+    var trailTimer = 0.0;
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+
+    var tpController = ThirdPersonController(cameraNode, sinbadNode);
+    tpController.distance = 15.0;
+    tpController.springStiffness = 12.0;
+    tpController.springDamping = 0.85;
+    tpController.mouseSensitivity = 0.2;
+    tpController.setOffset(0, 8, 0);
+    tpController.setDistanceLimits(5.0, 30.0);
+    tpController.setPitchLimits(-20, 60);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.15);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+    var moveSpeed = 30.0;
+
+    print("Press 4 or 5 to see sword effects!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // ========== ATTACK ANIMATIONS ==========
+
+        // Slice Vertical com trail
+        if (isKeyPressed(KEY_4) && !isAttacking)
+        {
+            currentTop.enabled = false;
+            animSliceV.enabled = true;
+            animSliceV.loop = false;
+            animSliceV.setTimePosition(0);
+            currentTop = animSliceV;
+            isAttacking = true;
+            trailActive = true;
+            trailTimer = 0.5;  // Trail dura 0.5 segundos
+            print("SLASH! (Vertical)");
+        }
+
+        // Slice Horizontal com partículas
+        if (isKeyPressed(KEY_5) && !isAttacking)
+        {
+            currentTop.enabled = false;
+            animSliceH.enabled = true;
+            animSliceH.loop = false;
+            animSliceH.setTimePosition(0);
+            currentTop = animSliceH;
+            isAttacking = true;
+
+            // Ativar partículas de impacto
+            impactParticles.emitting = true;
+            impactParticles.clear();
+            impactParticles.fastForward(0.1);
+
+            // Posicionar partículas na frente do Sinbad
+            var sinbadPos = sinbadNode.position;
+            particleNode.setPosition(sinbadPos.x, sinbadPos.y + 5, sinbadPos.z + 3);
+
+            print("SLASH! (Horizontal) + IMPACT!");
+        }
+
+        // Timer para desligar trail
+        if (trailActive)
+        {
+            trailTimer = trailTimer - deltaTime;
+            if (trailTimer <= 0.0)
+            {
+                trailActive = false;
+                swordTrail.clearAllChains();  // Limpar trail
+            }
+        }
+
+        // Desligar partículas após 1 segundo
+        if (impactParticles.emitting)
+        {
+            var numParticles = impactParticles.getNumParticles();
+            if (numParticles == 0 || currentTop.getTimePosition() > 0.5)
+            {
+                impactParticles.emitting = false;
+            }
+        }
+
+        // Check se ataque terminou
+        if (isAttacking && currentTop.hasEnded())
+        {
+            currentTop.enabled = false;
+            animTop.enabled = true;
+            animTop.loop = true;
+            currentTop = animTop;
+            isAttacking = false;
+        }
+
+        // ========== MOVEMENT ==========
+
+        var speed = moveSpeed * deltaTime;
+        if (isKeyDown(KEY_W)) sinbadNode.moveForward(speed);
+        if (isKeyDown(KEY_S)) sinbadNode.moveBackward(speed);
+        if (isKeyDown(KEY_A)) sinbadNode.yaw(100.0 * deltaTime);
+        if (isKeyDown(KEY_D)) sinbadNode.yaw(-100.0 * deltaTime);
+
+        // ========== UPDATE ANIMATIONS ==========
+
+        if (currentBase.enabled) currentBase.addTime(deltaTime);
+        if (currentTop.enabled && currentTop != currentBase) currentTop.addTime(deltaTime);
+
+        // ========== CAMERA ==========
+
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            tpController.distance = tpController.distance - wheelMove * 2.0;
+        }
+
+        tpController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PARTICLE EFFECTS SHOWCASE
+// ============================================================
+
+def particle_showcase()
+{
+    print("=== Particle Effects Showcase ===");
+    print("Press 1-5 to spawn different effects:");
+    print("  1 = Smoke");
+    print("  2 = Fire");
+    print("  3 = Aureola (ring)");
+    print("  4 = Explosion");
+    print("  5 = Rain");
+
+    CreateEngine(1280, 720, "Particle Showcase", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 150, -250);
+
+    // ========== CREATE PARTICLE SYSTEMS ==========
+
+    // Smoke
+    var smokePS = createParticleSystem(scene, "Smoke", "Examples/Smoke");
+    smokePS.emitting = false;
+    var smokeNode = rootNode.createChild();
+    smokeNode.attachObject(smokePS);
+    smokeNode.setPosition(-15, 5, 0);
+
+    // Fire (precisa do template Examples/GreenyNimbus ou similar)
+    var firePS = createParticleSystem(scene, "Fire", "Examples/GreenyNimbus");
+    firePS.emitting = false;
+    var fireNode = rootNode.createChild();
+    fireNode.attachObject(firePS);
+    fireNode.setPosition(-7.5, 5, 0);
+
+    // Aureola
+    var aurePS = createParticleSystem(scene, "Aureola", "Examples/Aureola");
+    aurePS.emitting = false;
+    var aureNode = rootNode.createChild();
+    aureNode.attachObject(aurePS);
+    aureNode.setPosition(0, 5, 0);
+
+    // Rain
+    var rainPS = createParticleSystem(scene, "Rain", "Examples/Rain");
+    rainPS.emitting = false;
+    var rainNode = rootNode.createChild();
+    rainNode.attachObject(rainPS);
+    rainNode.setPosition(7.5, 15, 0);
+
+    // PurpleFountain (como explosão)
+    var explPS = createParticleSystem(scene, "Explosion", "Examples/PurpleFountain");
+    explPS.emitting = false;
+    var explNode = rootNode.createChild();
+    explNode.attachObject(explPS);
+    explNode.setPosition(15, 5, 0);
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 15, 50);
+    cameraNode.lookAt(0, 5, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.2);
+
+    print("Ready! Press 1-5 to spawn effects");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Spawn effects
+        if (isKeyPressed(KEY_1))
+        {
+            smokePS.emitting = !smokePS.emitting;
+            print("Smoke: " + (smokePS.emitting ? "ON" : "OFF"));
+        }
+        if (isKeyPressed(KEY_2))
+        {
+            firePS.emitting = !firePS.emitting;
+            print("Fire: " + (firePS.emitting ? "ON" : "OFF"));
+        }
+        if (isKeyPressed(KEY_3))
+        {
+            aurePS.emitting = !aurePS.emitting;
+            print("Aureola: " + (aurePS.emitting ? "ON" : "OFF"));
+        }
+        if (isKeyPressed(KEY_4))
+        {
+            explPS.clear();
+            explPS.emitting = true;
+            explPS.fastForward(0.1);
+            print("EXPLOSION!");
+        }
+        if (isKeyPressed(KEY_5))
+        {
+            rainPS.emitting = !rainPS.emitting;
+            print("Rain: " + (rainPS.emitting ? "ON" : "OFF"));
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// RIBBON TRAIL DEMO
+// ============================================================
+
+def ribbon_trail_demo()
+{
+    print("=== Ribbon Trail Demo ===");
+    print("Move the sphere with arrow keys to see trails!");
+
+    CreateEngine(1280, 720, "Ribbon Trails", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    var rootNode = scene.getRoot();
+
+    // Create sphere
+    var sphere = scene.createEntity("sphere.mesh");
+    var sphereNode = rootNode.createChild();
+    sphereNode.attachObject(sphere);
+    sphereNode.setPosition(0, 10, 0);
+    sphereNode.setScale(2, 2, 2);
+
+    // Create ribbon trail
+    var trail = createRibbonTrail(scene, "Trail");
+    trail.setMaterialName("Examples/LightRibbonTrail");
+    trail.setTrailLength(50.0);
+    trail.setMaxChainElements(200);
+
+    // Add sphere to trail
+    trail.addNode(sphereNode);
+
+    // Rainbow colors
+    trail.setInitialColour(0, 1.0, 0.0, 1.0, 1.0);  // Magenta
+    trail.setColourChange(0, 0.0, 0.0, 0.0, -0.3);  // Fade
+    trail.setInitialWidth(0, 2.0);
+
+    var trailNode = rootNode.createChild();
+    trailNode.attachObject(trail);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 20, 60);
+    cameraNode.lookAt(0, 10, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.05, 0.05, 0.1);
+
+    var speed = 30.0;
+
+    print("Use Arrow Keys to move!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Movement
+        var move = speed * deltaTime;
+        if (isKeyDown(KEY_UP)) sphereNode.moveForward(move);
+        if (isKeyDown(KEY_DOWN)) sphereNode.moveBackward(move);
+        if (isKeyDown(KEY_LEFT)) sphereNode.moveLeft(move);
+        if (isKeyDown(KEY_RIGHT)) sphereNode.moveRight(move);
+        if (isKeyDown(KEY_SPACE)) sphereNode.moveUp(move);
+        if (isKeyDown(KEY_LCTRL)) sphereNode.moveDown(move);
+
+        // Clear trail
+        if (isKeyPressed(KEY_C))
+        {
+            trail.clearAllChains();
+            print("Trail cleared!");
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}

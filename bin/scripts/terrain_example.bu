@@ -1,0 +1,424 @@
+// ============================================================
+// TERRAIN SYSTEM EXAMPLES
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// EXEMPLO 1: Simple Terrain
+// ============================================================
+
+def simple_terrain()
+{
+    print("=== Simple Terrain Example ===");
+    print("Creating procedurally generated terrain...");
+
+    CreateEngine(1280, 720, "Terrain Demo", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.6);
+    scene.setShadowTechnique(1);
+
+    var rootNode = scene.getRoot();
+
+    // ========== LIGHT ==========
+
+    var light = scene.createLight("MainLight", 1);  // Directional
+    light.setDiffuse(1.0, 0.9, 0.8);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(1000, 500, 1000);
+
+    // ========== TERRAIN ==========
+
+    print("Creating terrain group...");
+    var terrainGroup = createTerrainGroup(scene);
+
+    // Configure terrain defaults
+    configureTerrainDefaults(terrainGroup, light);
+
+    // Set terrain size and world size
+    terrainGroup.setTerrainSize(513);  // Must be 2^n + 1
+    terrainGroup.setTerrainWorldSize(2000.0);  // Size in world units
+    terrainGroup.setOrigin(0, 0, 0);
+
+    // Generate random terrain
+    print("Generating terrain...");
+    generateRandomTerrain(terrainGroup, 0, 0, 12345);  // x, z, seed
+
+    // Load all terrains
+    print("Loading terrain...");
+    terrainGroup.loadAllTerrains();
+    terrainGroup.freeTemporaryResources();
+
+    print("Terrain ready!");
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 100, 500);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    // Free camera controller
+    var freeCam = FreeCameraController(cameraNode);
+    freeCam.moveSpeed = 200.0;
+    freeCam.mouseSensitivity = 0.15;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.5, 0.7, 0.9);  // Sky blue
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    print("Controls:");
+    print("  WASD + E/Q - Move camera");
+    print("  Right Mouse - Rotate");
+    print("  Explore the terrain!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Camera movement
+        freeCam.setMoveForward(isKeyDown(KEY_W));
+        freeCam.setMoveBackward(isKeyDown(KEY_S));
+        freeCam.setMoveLeft(isKeyDown(KEY_A));
+        freeCam.setMoveRight(isKeyDown(KEY_D));
+        freeCam.setMoveUp(isKeyDown(KEY_E));
+        freeCam.setMoveDown(isKeyDown(KEY_Q));
+
+        // Camera rotation
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        freeCam.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        // Update terrain
+        terrainGroup.update();
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 2: Terrain with Character
+// ============================================================
+
+def terrain_with_character()
+{
+    print("=== Terrain with Character ===");
+    print("Sinbad walking on procedural terrain!");
+
+    CreateEngine(1280, 720, "Terrain + Character", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.6);
+    scene.setShadowTechnique(1);
+
+    var rootNode = scene.getRoot();
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 0.9, 0.8);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(1000, 500, 1000);
+
+    // ========== TERRAIN ==========
+
+    print("Creating terrain...");
+    var terrainGroup = createTerrainGroup(scene);
+    configureTerrainDefaults(terrainGroup, light);
+
+    terrainGroup.setTerrainSize(513);
+    terrainGroup.setTerrainWorldSize(2000.0);
+    terrainGroup.setOrigin(0, 0, 0);
+
+    generateRandomTerrain(terrainGroup, 0, 0, 42);
+    terrainGroup.loadAllTerrains();
+    terrainGroup.freeTemporaryResources();
+
+    // ========== SINBAD ==========
+
+    var sinbadEntity = scene.createEntity("Sinbad.mesh");
+    sinbadEntity.castShadows = true;
+    var sinbadNode = rootNode.createChild();
+    sinbadNode.attachObject(sinbadEntity);
+    sinbadNode.setScale(3, 3, 3);
+
+    // Position Sinbad on terrain
+    var startX = 0.0;
+    var startZ = 0.0;
+    var terrainHeight = terrainGroup.getHeightAtWorldPosition(startX, 0, startZ);
+    sinbadNode.setPosition(startX, terrainHeight, startZ);
+
+    // Animations
+    var animIdle = getAnimationState(sinbadEntity, "IdleBase");
+    var animTop = getAnimationState(sinbadEntity, "IdleTop");
+    var animRun = getAnimationState(sinbadEntity, "RunBase");
+    var animRunTop = getAnimationState(sinbadEntity, "RunTop");
+
+    animIdle.enabled = true;
+    animIdle.loop = true;
+    animTop.enabled = true;
+    animTop.loop = true;
+
+    var currentBase = animIdle;
+    var currentTop = animTop;
+    var isMoving = false;
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+
+    var tpController = ThirdPersonController(cameraNode, sinbadNode);
+    tpController.distance = 20.0;
+    tpController.springStiffness = 12.0;
+    tpController.springDamping = 0.85;
+    tpController.setOffset(0, 10, 0);
+    tpController.setDistanceLimits(10.0, 40.0);
+    tpController.setPitchLimits(-10, 70);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.5, 0.7, 0.9);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+    var moveSpeed = 40.0;
+
+    print("Controls:");
+    print("  WASD - Move Sinbad");
+    print("  Right Mouse - Rotate camera");
+    print("  Sinbad will follow the terrain!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        isMoving = false;
+
+        // Movement
+        var speed = moveSpeed * deltaTime;
+        if (isKeyDown(KEY_W))
+        {
+            sinbadNode.moveForward(speed);
+            isMoving = true;
+        }
+        if (isKeyDown(KEY_S))
+        {
+            sinbadNode.moveBackward(speed);
+            isMoving = true;
+        }
+        if (isKeyDown(KEY_A))
+        {
+            sinbadNode.yaw(100.0 * deltaTime);
+        }
+        if (isKeyDown(KEY_D))
+        {
+            sinbadNode.yaw(-100.0 * deltaTime);
+        }
+
+        // ========== TERRAIN FOLLOWING ==========
+
+        // Get Sinbad's position
+        var sinbadPos = sinbadNode.position;
+
+        // Get terrain height at Sinbad's position
+        var height = terrainGroup.getHeightAtWorldPosition(sinbadPos.x, sinbadPos.y, sinbadPos.z);
+
+        // Update Sinbad's Y position to follow terrain
+        sinbadNode.setPosition(sinbadPos.x, height, sinbadPos.z);
+
+        // ========== ANIMATIONS ==========
+
+        // Auto-switch to run when moving
+        if (isMoving && currentBase == animIdle)
+        {
+            currentBase.enabled = false;
+            currentTop.enabled = false;
+            animRun.enabled = true;
+            animRunTop.enabled = true;
+            currentBase = animRun;
+            currentTop = animRunTop;
+        }
+        // Auto-switch to idle when stopped
+        if (!isMoving && currentBase == animRun)
+        {
+            currentBase.enabled = false;
+            currentTop.enabled = false;
+            animIdle.enabled = true;
+            animTop.enabled = true;
+            currentBase = animIdle;
+            currentTop = animTop;
+        }
+
+        // Update animations
+        if (currentBase.enabled) currentBase.addTime(deltaTime);
+        if (currentTop.enabled && currentTop != currentBase) currentTop.addTime(deltaTime);
+
+        // ========== CAMERA ==========
+
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            tpController.distance = tpController.distance - wheelMove * 2.0;
+        }
+
+        tpController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        // Update terrain
+        terrainGroup.update();
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 3: Multiple Terrain Tiles
+// ============================================================
+
+def multiple_terrains()
+{
+    print("=== Multiple Terrain Tiles ===");
+    print("Creating a 3x3 grid of terrains!");
+
+    CreateEngine(1280, 720, "Large Terrain World", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.6);
+
+    var rootNode = scene.getRoot();
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 0.9, 0.8);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(2000, 1000, 2000);
+
+    // ========== TERRAIN ==========
+
+    print("Creating large terrain world...");
+    var terrainGroup = createTerrainGroup(scene);
+    configureTerrainDefaults(terrainGroup, light);
+
+    terrainGroup.setTerrainSize(513);
+    terrainGroup.setTerrainWorldSize(1000.0);
+    terrainGroup.setOrigin(0, 0, 0);
+
+    // Generate 3x3 grid of terrains with different seeds
+    print("Generating 9 terrain tiles...");
+    var seedBase = 1000;
+
+    for (var x = -1; x <= 1; x = x + 1)
+    {
+        for (var z = -1; z <= 1; z = z + 1)
+        {
+            var seed = seedBase + x * 100 + z;
+            generateRandomTerrain(terrainGroup, x, z, seed);
+            print("  Tile (" + x + ", " + z + ") generated");
+        }
+    }
+
+    terrainGroup.loadAllTerrains();
+    terrainGroup.freeTemporaryResources();
+
+    print("Large world ready! Explore with free camera");
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 200, 800);
+
+    var freeCam = FreeCameraController(cameraNode);
+    freeCam.moveSpeed = 300.0;
+    freeCam.mouseSensitivity = 0.15;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.4, 0.6, 0.8);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    print("Fly around and explore the world!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Camera movement
+        freeCam.setMoveForward(isKeyDown(KEY_W));
+        freeCam.setMoveBackward(isKeyDown(KEY_S));
+        freeCam.setMoveLeft(isKeyDown(KEY_A));
+        freeCam.setMoveRight(isKeyDown(KEY_D));
+        freeCam.setMoveUp(isKeyDown(KEY_E));
+        freeCam.setMoveDown(isKeyDown(KEY_Q));
+
+        // Speed boost
+        if (isKeyDown(KEY_LSHIFT))
+        {
+            freeCam.moveSpeed = 600.0;
+        }
+        else
+        {
+            freeCam.moveSpeed = 300.0;
+        }
+
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        freeCam.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        terrainGroup.update();
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}

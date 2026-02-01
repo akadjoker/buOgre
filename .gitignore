@@ -1,0 +1,10 @@
+/build
+/tmp
+/bin/buOgre
+/bin/lib
+/bin/media
+/bin/assets
+/bin/shaders_cache
+  
+.claude
+.cache

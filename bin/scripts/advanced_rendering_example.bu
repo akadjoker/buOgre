@@ -1,0 +1,488 @@
+// ============================================================
+// ADVANCED RENDERING FEATURES
+// Resource Loading, Materials, Skybox, Compositor (Post-Processing)
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// EXEMPLO 1: Resource Loading from Zip
+// ============================================================
+
+def resource_loading_example()
+{
+    print("=== Resource Loading Example ===");
+    print("Load resources from different locations");
+
+    CreateEngine(1280, 720, "Resource Loading", 1, false, true);
+
+    // ========== ADICIONAR RESOURCE LOCATIONS ==========
+
+    // Adicionar pasta de resources
+    addResourceLocation("./media", "FileSystem", "General");
+    print("Added ./media folder to resources");
+
+    // Adicionar zip file (se existir)
+    // addResourceLocation("./media/packs/MyAssets.zip", "Zip", "General");
+
+    // Criar grupo custom
+    createResourceGroup("MyCustomGroup");
+    addResourceLocation("./custom_assets", "FileSystem", "MyCustomGroup");
+
+    // Inicializar todos os grupos
+    initialiseAllResourceGroups();
+    print("All resource groups initialized!");
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 15, 30);
+    cameraNode.lookAt(0, 5, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.4);
+
+    print("Resources loaded! Press ESC to exit");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 2: Custom Materials
+// ============================================================
+
+def custom_materials_example()
+{
+    print("=== Custom Materials Example ===");
+    print("Create materials with different properties");
+
+    CreateEngine(1280, 720, "Custom Materials", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    light.setSpecular(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(300, 500, 300);
+
+    // ========== CRIAR MATERIAIS CUSTOMIZADOS ==========
+
+    // Material 1: Vermelho brilhante
+    var mat1 = createMaterial("RedShiny");
+    mat1.setAmbient(0.3, 0.0, 0.0);
+    mat1.setDiffuse(0.8, 0.0, 0.0, 1.0);
+    mat1.setSpecular(1.0, 1.0, 1.0, 128.0);  // Brilho alto
+    mat1.setEmissive(0.1, 0.0, 0.0);  // Leve glow
+    print("Created RedShiny material");
+
+    // Material 2: Verde metálico
+    var mat2 = createMaterial("GreenMetal");
+    mat2.setAmbient(0.0, 0.2, 0.0);
+    mat2.setDiffuse(0.0, 0.6, 0.0, 1.0);
+    mat2.setSpecular(0.8, 0.8, 0.8, 64.0);
+    print("Created GreenMetal material");
+
+    // Material 3: Azul transparente
+    var mat3 = createMaterial("BlueGlass");
+    mat3.setAmbient(0.0, 0.0, 0.3);
+    mat3.setDiffuse(0.2, 0.2, 0.8, 0.5);  // Alpha = 0.5
+    mat3.setSpecular(1.0, 1.0, 1.0, 96.0);
+    mat3.setSceneBlending(3);  // ALPHA_BLEND
+    mat3.setDepthWrite(false);
+    print("Created BlueGlass material (transparent)");
+
+    // Material 4: Emissivo (glow)
+    var mat4 = createMaterial("GlowYellow");
+    mat4.setAmbient(0.3, 0.3, 0.0);
+    mat4.setDiffuse(0.8, 0.8, 0.0, 1.0);
+    mat4.setEmissive(0.5, 0.5, 0.0);  // Glow amarelo
+    mat4.setLightingEnabled(false);  // Self-illuminated
+    print("Created GlowYellow material (emissive)");
+
+    // ========== CRIAR MESHES COM MATERIAIS ==========
+
+    var sphere1Mesh = createSphere(scene, "Sphere1", 2.0, 32, 32);
+    var sphere1 = scene.createEntity(sphere1Mesh);
+    sphere1.setMaterialName("RedShiny");
+    sphere1.castShadows = true;
+    var sphere1Node = rootNode.createChild();
+    sphere1Node.attachObject(sphere1);
+    sphere1Node.setPosition(-8, 4, 0);
+
+    var sphere2Mesh = createSphere(scene, "Sphere2", 2.0, 32, 32);
+    var sphere2 = scene.createEntity(sphere2Mesh);
+    sphere2.setMaterialName("GreenMetal");
+    sphere2.castShadows = true;
+    var sphere2Node = rootNode.createChild();
+    sphere2Node.attachObject(sphere2);
+    sphere2Node.setPosition(-3, 4, 0);
+
+    var sphere3Mesh = createSphere(scene, "Sphere3", 2.0, 32, 32);
+    var sphere3 = scene.createEntity(sphere3Mesh);
+    sphere3.setMaterialName("BlueGlass");
+    sphere3.castShadows = false;  // Transparente não projeta sombra
+    var sphere3Node = rootNode.createChild();
+    sphere3Node.attachObject(sphere3);
+    sphere3Node.setPosition(3, 4, 0);
+
+    var sphere4Mesh = createSphere(scene, "Sphere4", 2.0, 32, 32);
+    var sphere4 = scene.createEntity(sphere4Mesh);
+    sphere4.setMaterialName("GlowYellow");
+    sphere4.castShadows = false;
+    var sphere4Node = rootNode.createChild();
+    sphere4Node.attachObject(sphere4);
+    sphere4Node.setPosition(8, 4, 0);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 10, 25);
+    cameraNode.lookAt(0, 4, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.15);
+
+    print("Materials created! Red, Green, Blue (transparent), Yellow (glow)");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Rodar esferas
+        sphere1Node.yaw(30.0 * deltaTime);
+        sphere2Node.yaw(35.0 * deltaTime);
+        sphere3Node.yaw(40.0 * deltaTime);
+        sphere4Node.yaw(45.0 * deltaTime);
+
+        // Rodar câmera
+        rotation = rotation + 10.0 * deltaTime;
+        var angleRad = rotation * 0.0174533;
+        var camX = sin(angleRad) * 30.0;
+        var camZ = cos(angleRad) * 30.0;
+        cameraNode.setPosition(camX, 10, camZ);
+        cameraNode.lookAt(0, 4, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 3: Skybox e Skydome
+// ============================================================
+
+def sky_example()
+{
+    print("=== Sky Rendering Example ===");
+    print("Press 1/2/3 to switch:");
+    print("  1 = Skybox");
+    print("  2 = Skydome");
+    print("  3 = Skyplane");
+    print("  0 = Disable sky");
+
+    CreateEngine(1280, 720, "Sky Demo", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // Terrain/Ground
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 20.0, 20.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Some objects
+    for (var i = 0; i < 10; i = i + 1)
+    {
+        var angle = (i / 10.0) * 6.28318;
+        var radius = 20.0;
+
+        var cubeMesh = createCube(scene, "Cube" + i, 3.0);
+        var cube = scene.createEntity(cubeMesh);
+        var cubeNode = rootNode.createChild();
+        cubeNode.attachObject(cube);
+        cubeNode.setPosition(cos(angle) * radius, 1.5, sin(angle) * radius);
+    }
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 10, 30);
+    cameraNode.lookAt(0, 5, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.5);
+
+    var currentSky = 0;  // 0=none, 1=skybox, 2=skydome, 3=skyplane
+
+    print("Ready! Press 1/2/3 to change sky");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Switch sky types
+        if (isKeyPressed(KEY_0) && currentSky != 0)
+        {
+            setSkyBox(scene, false);
+            setSkyDome(scene, false);
+            setSkyPlane(scene, false);
+            currentSky = 0;
+            print("Sky disabled");
+        }
+
+        if (isKeyPressed(KEY_1) && currentSky != 1)
+        {
+            setSkyDome(scene, false);
+            setSkyPlane(scene, false);
+            setSkyBox(scene, true, "Examples/SpaceSkyBox", 5000.0, true);
+            currentSky = 1;
+            print("Skybox enabled (Examples/SpaceSkyBox)");
+        }
+
+        if (isKeyPressed(KEY_2) && currentSky != 2)
+        {
+            setSkyBox(scene, false);
+            setSkyPlane(scene, false);
+            setSkyDome(scene, true, "Examples/CloudySky", 10.0, 8.0, 4000.0, true);
+            currentSky = 2;
+            print("Skydome enabled (Examples/CloudySky)");
+        }
+
+        if (isKeyPressed(KEY_3) && currentSky != 3)
+        {
+            setSkyBox(scene, false);
+            setSkyDome(scene, false);
+            setSkyPlane(scene, true, "Examples/CloudyNoonSkyBox", 1000.0, 10.0, true, 0.0);
+            currentSky = 3;
+            print("Skyplane enabled (Examples/CloudyNoonSkyBox)");
+        }
+
+        // Rotate camera
+        rotation = rotation + 15.0 * deltaTime;
+        var angleRad = rotation * 0.0174533;
+        var camX = sin(angleRad) * 35.0;
+        var camZ = cos(angleRad) * 35.0;
+        cameraNode.setPosition(camX, 10, camZ);
+        cameraNode.lookAt(0, 5, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 4: Compositor (Post-Processing)
+// ============================================================
+
+def compositor_example()
+{
+    print("=== Compositor (Post-Processing) Example ===");
+    print("Press 1/2/3 to toggle effects:");
+    print("  1 = Bloom");
+    print("  2 = HDR");
+    print("  3 = Motion Blur");
+
+    CreateEngine(1280, 720, "Post-Processing", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Criar objetos emissivos (para bloom funcionar bem)
+    var glowMat = createMaterial("GlowMat");
+    glowMat.setEmissive(1.0, 0.5, 0.0);
+    glowMat.setDiffuse(1.0, 0.5, 0.0, 1.0);
+
+    for (var i = 0; i < 8; i = i + 1)
+    {
+        var angle = (i / 8.0) * 6.28318;
+        var sphereMesh = createSphere(scene, "GlowSphere" + i, 1.5, 24, 24);
+        var sphere = scene.createEntity(sphereMesh);
+        sphere.setMaterialName("GlowMat");
+        var sphereNode = rootNode.createChild();
+        sphereNode.attachObject(sphere);
+        sphereNode.setPosition(cos(angle) * 10.0, 3, sin(angle) * 10.0);
+    }
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 15, 25);
+    cameraNode.lookAt(0, 3, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.05, 0.05, 0.1);
+
+    // ========== SETUP COMPOSITORS ==========
+
+    var bloomEnabled = false;
+    var hdrEnabled = false;
+    var motionBlurEnabled = false;
+
+    print("Ready! Press 1/2/3 to toggle effects");
+    print("Note: Effects require compositor scripts to be loaded");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Toggle Bloom
+        if (isKeyPressed(KEY_1))
+        {
+            if (bloomEnabled)
+            {
+                setCompositorEnabled(viewport, "Bloom", false);
+                bloomEnabled = false;
+                print("Bloom OFF");
+            }
+            else
+            {
+                var success = setupBloom(viewport);
+                if (success)
+                {
+                    bloomEnabled = true;
+                    print("Bloom ON");
+                }
+                else
+                {
+                    print("Bloom compositor not available");
+                }
+            }
+        }
+
+        // Toggle HDR
+        if (isKeyPressed(KEY_2))
+        {
+            if (hdrEnabled)
+            {
+                setCompositorEnabled(viewport, "HDR", false);
+                hdrEnabled = false;
+                print("HDR OFF");
+            }
+            else
+            {
+                var success = setupHDR(viewport);
+                if (success)
+                {
+                    hdrEnabled = true;
+                    print("HDR ON");
+                }
+                else
+                {
+                    print("HDR compositor not available");
+                }
+            }
+        }
+
+        // Toggle Motion Blur
+        if (isKeyPressed(KEY_3))
+        {
+            if (motionBlurEnabled)
+            {
+                setCompositorEnabled(viewport, "Motion Blur", false);
+                motionBlurEnabled = false;
+                print("Motion Blur OFF");
+            }
+            else
+            {
+                var success = setupMotionBlur(viewport);
+                if (success)
+                {
+                    motionBlurEnabled = true;
+                    print("Motion Blur ON");
+                }
+                else
+                {
+                    print("Motion Blur compositor not available");
+                }
+            }
+        }
+
+        // Rotate camera
+        rotation = rotation + 20.0 * deltaTime;
+        var angleRad = rotation * 0.0174533;
+        var camX = sin(angleRad) * 30.0;
+        var camZ = cos(angleRad) * 30.0;
+        cameraNode.setPosition(camX, 15, camZ);
+        cameraNode.lookAt(0, 3, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// Helper: sin/cos approximation
+def sin(x)
+{
+    // Basic sin approximation for demo purposes
+    return 0.0;  // TODO: implement via native if needed
+}
+
+def cos(x)
+{
+    return 0.0;  // TODO: implement via native if needed
+}

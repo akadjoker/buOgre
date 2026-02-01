@@ -1,0 +1,563 @@
+// ============================================================
+// EXEMPLOS DE USO DOS CAMERA CONTROLLERS
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// EXEMPLO 1: FPS CONTROLLER
+// ============================================================
+
+def example_fps_controller()
+{
+print("=== FPS Controller Example ===");
+
+CreateEngine(1024, 720, "FPS Controller", 1, false, true);
+
+
+
+var scene = Scene();
+scene.setAmbientLight(0.3, 0.3, 0.3);
+scene.setShadowTechnique(1);
+
+// Get the root SceneNode from the scene
+var rootNode = scene.getRoot();
+
+// Create a directional light
+//var pointLight = Light(scene, "PointLight", 0);  // 0 = point light type, 1 = directional, 2 = spotlight
+var pointLight = scene.createLight("PointLight", 0);  // 0 = point light type, 1 = directional, 2 = spotlight
+pointLight.setDiffuse(1.0, 1.0, 1.0);
+
+var lightNode = rootNode.createChild();
+lightNode.attachObject(pointLight);
+lightNode.setPosition(200, 150, -250);
+
+
+
+CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+ 
+ 
+ 
+var cam = scene.createCamera("MainCam");
+
+var camera = rootNode.createChild();
+camera.attachObject(cam);
+camera.setPosition(0, 50, 200);
+camera.lookAt(0, 0, 0);
+ 
+
+
+var entity = scene.createEntity("ground");
+var node = rootNode.createChild();
+node.attachObject(entity);
+node.setPosition(0, 0, 0);
+node.setScale(1, 1, 1);
+
+var ogreHead = scene.createEntity("ogrehead.mesh");
+ogreHead.castShadows = true;
+var headNode = rootNode.createChild();
+headNode.attachObject(ogreHead);
+headNode.setPosition(0, 20, 10);
+headNode.setScale(1, 1, 1);
+
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+// Create FPS controller
+var fpsController = FPSController(camera);
+fpsController.moveSpeed = 150.0;  // velocidade de movimento
+fpsController.mouseSensitivity = 0.15;  // sensibilidade do mouse
+ 
+    // Mouse tracking
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Update movement flags based on keyboard input
+        fpsController.setMoveForward(isKeyDown(KEY_W));
+        fpsController.setMoveBackward(isKeyDown(KEY_S));
+        fpsController.setMoveLeft(isKeyDown(KEY_A));
+        fpsController.setMoveRight(isKeyDown(KEY_D));
+        fpsController.setMoveUp(isKeyDown(KEY_SPACE));
+        fpsController.setMoveDown(isKeyDown(KEY_LCTRL));
+
+        // Calculate mouse delta
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_LEFT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Update controller
+        fpsController.update(deltaTime, -mouseDeltaX, mouseDeltaY);
+
+       UpdateEngine(deltaTime);
+    }
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 2: ORBIT CONTROLLER
+// ============================================================
+
+def example_orbit_controller()
+{
+    print("=== Orbit Controller Example ===");
+
+    CreateEngine(1024, 720, "Orbit Controller", 1, false, true);
+
+    // Setup scene
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    var rootNode = scene.getRoot();
+
+    // Create object to orbit around
+    var ogreHead = scene.createEntity("ogrehead.mesh");
+    var headNode = rootNode.createChild();
+    headNode.attachObject(ogreHead);
+    headNode.setPosition(0, 0, 0);
+
+    // Create camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 50, 200);
+
+    // Create Orbit controller (orbita em torno de 0, 0, 0)
+    var orbitController = OrbitController(cameraNode, 0, 0, 0);
+    orbitController.distance = 150.0;  // distância do alvo
+    orbitController.mouseSensitivity = 0.2;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Calculate mouse delta
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_LEFT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Zoom com scroll do mouse
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            orbitController.zoom(wheelMove * 10.0);
+        }
+
+        // Update controller
+        orbitController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 3: FREE CAMERA CONTROLLER
+// ============================================================
+
+def example_free_camera()
+{
+    print("=== Free Camera Controller Example ===");
+
+    CreateEngine(1024, 720, "Free Camera Controller", 1, false, true);
+    // Setup scene
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    var rootNode = scene.getRoot();
+
+
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+ 
+
+    var entity = scene.createEntity("ground");
+    var node = rootNode.createChild();
+    node.attachObject(entity);
+    node.setPosition(0, 0, 0);
+    node.setScale(1, 1, 1);
+
+
+    
+    var ogreHead = scene.createEntity("ogrehead.mesh");
+    var headNode = rootNode.createChild();
+    headNode.attachObject(ogreHead);
+    headNode.setPosition(0, 0, 0);
+
+    // Create camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 50, 200);
+
+
+
+    // Create Free camera controller
+    var freeCam = FreeCameraController(cameraNode);
+    freeCam.moveSpeed = 200.0;
+    freeCam.mouseSensitivity = 0.15;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Update movement flags
+        freeCam.setMoveForward(isKeyDown(KEY_W));
+        freeCam.setMoveBackward(isKeyDown(KEY_S));
+        freeCam.setMoveLeft(isKeyDown(KEY_A));
+        freeCam.setMoveRight(isKeyDown(KEY_D));
+        freeCam.setMoveUp(isKeyDown(KEY_E));
+        freeCam.setMoveDown(isKeyDown(KEY_Q));
+
+        // Calculate mouse delta
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))  // right click para rotação
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Update controller
+        freeCam.update(deltaTime, -mouseDeltaX, mouseDeltaY);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 4: TROCAR ENTRE CONTROLLERS EM RUNTIME
+// ============================================================
+
+def example_switch_controllers()
+{
+    print("=== Switch Controllers Example ===");
+    print("Press 1 for FPS, 2 for Orbit, 3 for Free Camera");
+
+    CreateEngine(1024, 720, "Switch Camera Controllers", 1, false, true);
+
+    // Setup scene
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    var rootNode = scene.getRoot();
+
+    // Create camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 50, 200);
+
+
+
+
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+ 
+
+    var entity = scene.createEntity("ground");
+    var node = rootNode.createChild();
+    node.attachObject(entity);
+    node.setPosition(0, 0, 0);
+    node.setScale(1, 1, 1);
+
+
+    
+    var ogreHead = scene.createEntity("ogrehead.mesh");
+    var headNode = rootNode.createChild();
+    headNode.attachObject(ogreHead);
+    headNode.setPosition(0, 0, 0);
+
+
+    // Create all controllers
+    var fpsController = FPSController(cameraNode);
+    fpsController.moveSpeed = 150.0;
+
+    var orbitController = OrbitController(cameraNode, 0, 0, 0);
+    orbitController.distance = 150.0;
+
+    var freeCam = FreeCameraController(cameraNode);
+    freeCam.moveSpeed = 200.0;
+
+    // Current controller (1=FPS, 2=Orbit, 3=Free)
+    var currentController = 1;
+    fpsController.enabled = true;
+    orbitController.enabled = false;
+    freeCam.enabled = false;
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Switch controllers
+        if (isKeyPressed(KEY_A))
+        {
+            currentController = 1;
+            fpsController.enabled = true;
+            orbitController.enabled = false;
+            freeCam.enabled = false;
+            print("FPS Controller");
+        }
+        if (isKeyPressed(KEY_B))
+        {
+            currentController = 2;
+            fpsController.enabled = false;
+            orbitController.enabled = true;
+            freeCam.enabled = false;
+            print("Orbit Controller");
+        }
+        if (isKeyPressed(KEY_C))
+        {
+            currentController = 3;
+            fpsController.enabled = false;
+            orbitController.enabled = false;
+            freeCam.enabled = true;
+            print("Free Camera Controller");
+        }
+
+        // Calculate mouse delta
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = mouseX - lastMouseX;
+        var mouseDeltaY = mouseY - lastMouseY;
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Update inputs for all controllers
+        if (currentController == 1)
+        {
+            // FPS controller
+            fpsController.setMoveForward(isKeyDown(KEY_W));
+            fpsController.setMoveBackward(isKeyDown(KEY_S));
+            fpsController.setMoveLeft(isKeyDown(KEY_A));
+            fpsController.setMoveRight(isKeyDown(KEY_D));
+            fpsController.setMoveUp(isKeyDown(KEY_SPACE));
+            fpsController.setMoveDown(isKeyDown(KEY_LCTRL));
+
+            if (isMouseButtonDown(MOUSE_LEFT))
+            {
+                fpsController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+            }
+            else
+            {
+                fpsController.update(deltaTime, 0, 0);
+            }
+        }
+        else if (currentController == 2)
+        {
+            // Orbit controller
+            if (isMouseButtonDown(MOUSE_LEFT))
+            {
+                orbitController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+            }
+
+            var wheelMove = getMouseWheelMove();
+            if (wheelMove != 0)
+            {
+                orbitController.zoom(wheelMove * 10.0);
+            }
+        }
+        else if (currentController == 3)
+        {
+            // Free camera
+            freeCam.setMoveForward(isKeyDown(KEY_W));
+            freeCam.setMoveBackward(isKeyDown(KEY_S));
+            freeCam.setMoveLeft(isKeyDown(KEY_A));
+            freeCam.setMoveRight(isKeyDown(KEY_D));
+            freeCam.setMoveUp(isKeyDown(KEY_E));
+            freeCam.setMoveDown(isKeyDown(KEY_Q));
+
+            if (isMouseButtonDown(MOUSE_RIGHT))
+            {
+                freeCam.update(deltaTime, mouseDeltaX, mouseDeltaY);
+            }
+            else
+            {
+                freeCam.update(deltaTime, 0, 0);
+            }
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 5: THIRD PERSON CONTROLLER (com Spring System)
+// ============================================================
+
+def example_third_person()
+{
+  
+
+    CreateEngine(1280, 720, "Player Rotation Test", 1, false, true);
+    var scene = Scene();
+    scene.setAmbientLight(0.4, 0.4, 0.4);
+    var rootNode = scene.getRoot();
+
+    // ========== GROUND ==========
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 20.0, 20.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== PLAYER ==========
+    var playerEntity = scene.createEntity("ogrehead.mesh");
+    playerEntity.castShadows = true;
+    var playerNode = rootNode.createChild();
+    playerNode.attachObject(playerEntity);
+    playerNode.setPosition(0, 5, 0);
+    playerNode.setScale(2.0, 2.0, 2.0);
+
+    // ========== VISUAL INDICATOR (seta apontando para frente do player) ==========
+    var arrowEntity = scene.createEntity("cube.mesh");
+    var arrowNode = rootNode.createChild();
+    arrowNode.attachObject(arrowEntity);
+    arrowNode.setPosition(-20, 0, 7);  // Na frente do player
+    arrowNode.setScale(0.2, 0.2, 1.0);  // Alongado para parecer seta
+
+    // ========== LIGHT ==========
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 0.95, 0.9);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(100, 200, -100);
+
+    // ========== CAMERA ==========
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+
+    // ========== THIRD PERSON CONTROLLER ==========
+    var tpController = ThirdPersonController(cameraNode, playerNode);
+ 
+    tpController.setOffset(0, 80.0, 200);
+   
+ 
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.3, 0.4, 0.6);
+
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+    var playerSpeed = 40.0;
+    var rotationSpeed = 90.0;  // graus por segundo
+
+ 
+    print("Controls:");
+    print("  Q/E: Rotate player (camera should follow)");
+    print("  F: Toggle follow mode");
+
+
+    
+    var yaw =0.0;
+    var rool =0.0;
+    var pitch =0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // ========== PLAYER ROTATION ==========
+        if (isKeyDown(KEY_Q))
+        {
+            playerNode.yaw(rotationSpeed * deltaTime);
+        }
+        if (isKeyDown(KEY_E))
+        {
+            playerNode.yaw(-rotationSpeed * deltaTime);
+        }
+
+        // ========== PLAYER MOVEMENT ==========
+        var moveSpeed = playerSpeed * deltaTime;
+        if (isKeyDown(KEY_W)) playerNode.translate(0, 0, moveSpeed, 1);
+        if (isKeyDown(KEY_S)) playerNode.translate(0, 0, -moveSpeed, 1);
+        if (isKeyDown(KEY_A)) playerNode.translate(moveSpeed, 0, 0, 1);
+        if (isKeyDown(KEY_D)) playerNode.translate(-moveSpeed, 0, 0, 1);
+
+
+ 
+ 
+
+      
+
+        // ========== CAMERA ROTATION (manual) ==========
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_RIGHT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // ========== ZOOM ==========
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            tpController.zoom(-wheelMove * 0.5);
+        }
+
+       
+ 
+
+        // ========== UPDATE CAMERA ==========
+        tpController.update(deltaTime, mouseDeltaX, mouseDeltaY);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+ 

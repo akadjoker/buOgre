@@ -1,0 +1,509 @@
+// ============================================================
+// SHOWCASE EXAMPLES - Demonstrações visuais impressionantes
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// EXEMPLO 1: GRASS FIELD WITH WIND (Billboards dinâmicos)
+// ============================================================
+
+def grass_field_wind()
+{
+    print("=== Grass Field with Wind ===");
+    print("Campo de grama com vento usando billboards");
+
+    CreateEngine(1280, 720, "Grass Field", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // ========== FOG PARA ATMOSFERA ==========
+    setFogLinear(scene, 0.6, 0.7, 0.8, 50.0, 200.0);
+
+    // ========== SKYBOX ==========
+    setSkyBox(scene, true, "Examples/CloudyNoonSkyBox", 5000.0);
+
+    // ========== GROUND ==========
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 20.0, 20.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Material do chão (verde)
+    var groundMat = createMaterial("GrassMat");
+    groundMat.setDiffuse(0.3, 0.5, 0.2, 1.0);
+    groundEntity.setMaterialName("GrassMat");
+
+    // ========== LIGHT ==========
+    var light = scene.createLight("Sun", 1);
+    light.setDiffuse(1.0, 0.95, 0.8);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(500, 600, 300);
+
+    // ========== GRASS BILLBOARDS ==========
+    print("Creating grass field with billboards...");
+
+    var grassBB = createBillboardSet(scene, "GrassField", 1000);
+    grassBB.setMaterialName("BaseWhiteNoLighting");
+    grassBB.setBillboardDimensions(1.5, 2.5);
+    grassBB.setBillboardType(0);  // Point (always face camera)
+    grassBB.setCastShadows(false);
+
+    var grassPositions = [];
+    var grassCount = 500;
+
+    for (var i = 0; i < grassCount; i = i + 1)
+    {
+        var x = (random() - 0.5) * 100.0;
+        var z = (random() - 0.5) * 100.0;
+        var y = 0.0;
+
+        // Criar billboard de grass
+        var green = 0.4 + random() * 0.3;
+        var idx = grassBB.createBillboard(x, y + 1.25, z, 0.2, green, 0.1, 1.0);
+
+        // Guardar posição para animação de vento
+        grassPositions[i * 3 + 0] = x;
+        grassPositions[i * 3 + 1] = y;
+        grassPositions[i * 3 + 2] = z;
+    }
+
+    var grassNode = rootNode.createChild();
+    grassNode.attachObject(grassBB);
+
+    print(grassCount + " grass blades created!");
+
+    // ========== CAMERA ==========
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 3, 20);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.6, 0.7, 0.9);
+
+    // ========== FPS OVERLAY ==========
+    createFPSOverlay();
+
+    var windTime = 0.0;
+    var cameraAngle = 0.0;
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+
+    print("Watch the grass sway in the wind!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        windTime = windTime + deltaTime;
+
+        // FPS counter
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+        if (fpsTimer >= 1.0)
+        {
+            updateFPSText(frameCount);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // Animar grass com vento
+        for (var i = 0; i < grassCount; i = i + 1)
+        {
+            var baseX = grassPositions[i * 3 + 0];
+            var baseY = grassPositions[i * 3 + 1];
+            var baseZ = grassPositions[i * 3 + 2];
+
+            // Vento sinusoidal
+            var windOffset = sin(windTime * 2.0 + baseX * 0.1 + baseZ * 0.1) * 0.3;
+            grassBB.setBillboardPosition(i, baseX + windOffset, baseY + 1.25, baseZ);
+        }
+
+        // Rodar câmera lentamente
+        cameraAngle = cameraAngle + 10.0 * deltaTime;
+        var rad = cameraAngle * 0.0174533;
+        cameraNode.setPosition(sin(rad) * 25.0, 3, cos(rad) * 25.0);
+        cameraNode.lookAt(0, 0, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 2: FANTASY SCENE COMPLETA
+// ============================================================
+
+def fantasy_scene()
+{
+    print("=== Fantasy Scene ===");
+    print("Cena completa com terrain, particles, fog, skybox");
+
+    CreateEngine(1280, 720, "Fantasy World", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.4, 0.4, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // ========== SKYBOX ÉPICO ==========
+    setSkyDome(scene, true, "Examples/CloudySky", 5.0, 8.0, 4000.0);
+
+    // ========== FOG ATMOSFÉRICO ==========
+    setFogExp(scene, 0.5, 0.6, 0.7, 0.0008);
+
+    // ========== TERRAIN ==========
+    var terrainGroup = createTerrainGroup(scene);
+    var light = scene.createLight("Sun", 1);
+    light.setDiffuse(0.9, 0.85, 0.7);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(1000, 1200, 500);
+
+    configureTerrainDefaults(terrainGroup, light);
+    generateRandomTerrain(terrainGroup, 0, 0, 42);
+    terrainGroup.loadAllTerrains();
+    terrainGroup.freeTemporaryResources();
+
+    print("Terrain generated!");
+
+    // ========== TOWER NO CENTRO ==========
+    print("Building magical tower...");
+
+    // Base
+    var baseMesh = createCylinder(scene, "TowerBase", 5.0, 15.0, 24);
+    var baseEntity = scene.createEntity(baseMesh);
+    baseEntity.castShadows = true;
+    var baseNode = rootNode.createChild();
+    baseNode.attachObject(baseEntity);
+    baseNode.setPosition(0, 10, 0);
+
+    // Topo (cone)
+    var roofMesh = createCone(scene, "TowerRoof", 6.0, 12.0, 24);
+    var roofEntity = scene.createEntity(roofMesh);
+    roofEntity.castShadows = true;
+    var roofNode = rootNode.createChild();
+    roofNode.attachObject(roofEntity);
+    roofNode.setPosition(0, 23, 0);
+
+    // Material da torre
+    var towerMat = createMaterial("TowerMat");
+    towerMat.setDiffuse(0.6, 0.5, 0.4, 1.0);
+    towerMat.setSpecular(0.3, 0.3, 0.3, 32.0);
+    baseEntity.setMaterialName("TowerMat");
+    roofEntity.setMaterialName("TowerMat");
+
+    // ========== PARTÍCULAS MÁGICAS NO TOPO ==========
+    var magicParticles = createParticleSystem(scene, "Magic", "Examples/Aureola");
+    magicParticles.emitting = true;
+    var magicNode = rootNode.createChild();
+    magicNode.attachObject(magicParticles);
+    magicNode.setPosition(0, 30, 0);
+
+    // ========== ORBITING CRYSTALS COM RIBBON TRAILS ==========
+    print("Creating magic crystals...");
+
+    var crystalCount = 4;
+    var crystalNodes = [];
+    var crystalTrails = [];
+
+    for (var i = 0; i < crystalCount; i = i + 1)
+    {
+        // Crystal (sphere)
+        var crystalMesh = createSphere(scene, "Crystal" + i, 0.8, 16, 16);
+        var crystal = scene.createEntity(crystalMesh);
+        var crystalNode = rootNode.createChild();
+        crystalNode.attachObject(crystal);
+        crystalNodes[i] = crystalNode;
+
+        // Material emissivo
+        var crystalMat = createMaterial("CrystalMat" + i);
+        var hue = i / crystalCount;
+        crystalMat.setDiffuse(hue, 1.0 - hue, 0.5, 1.0);
+        crystalMat.setEmissive(hue * 0.5, (1.0 - hue) * 0.5, 0.3);
+        crystal.setMaterialName("CrystalMat" + i);
+
+        // Ribbon trail
+        var trail = createRibbonTrail(scene, "Trail" + i);
+        trail.setMaterialName("Examples/LightRibbonTrail");
+        trail.setTrailLength(20.0);
+        trail.setMaxChainElements(80);
+        trail.addNode(crystalNode);
+        trail.setInitialColour(0, hue, 1.0 - hue, 0.8, 1.0);
+        trail.setColourChange(0, 0.0, 0.0, 0.0, -0.4);
+        trail.setInitialWidth(0, 0.5);
+
+        var trailNode = rootNode.createChild();
+        trailNode.attachObject(trail);
+        crystalTrails[i] = trail;
+    }
+
+    // ========== CAMERA ==========
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(40, 30, 40);
+    cameraNode.lookAt(0, 15, 0, 2);
+
+    var viewport = Viewport(cam);
+
+    // ========== COMPOSITOR: BLOOM ==========
+    setupBloom(viewport);
+
+    // ========== FPS ==========
+    createFPSOverlay();
+
+    var time = 0.0;
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+
+    print("Fantasy scene ready! Watch the magic!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        time = time + deltaTime;
+
+        // FPS
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+        if (fpsTimer >= 1.0)
+        {
+            updateFPSText(frameCount);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // Orbit crystals ao redor da torre
+        for (var i = 0; i < crystalCount; i = i + 1)
+        {
+            var angle = (time + i * 1.57) * 0.5;  // Different speeds
+            var radius = 8.0 + i * 2.0;
+            var height = 20.0 + sin(time * 2.0 + i) * 3.0;
+
+            var x = cos(angle) * radius;
+            var z = sin(angle) * radius;
+
+            crystalNodes[i].setPosition(x, height, z);
+        }
+
+        // Rotate camera around scene
+        var camAngle = time * 0.2;
+        cameraNode.setPosition(
+            cos(camAngle) * 50.0,
+            30,
+            sin(camAngle) * 50.0
+        );
+        cameraNode.lookAt(0, 15, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 3: SHOOTING GALLERY (Raycasting)
+// ============================================================
+
+def shooting_gallery()
+{
+    print("=== Shooting Gallery ===");
+    print("Click to shoot targets!");
+    print("Left Mouse = Shoot");
+
+    CreateEngine(1280, 720, "Shooting Gallery", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.6);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // ========== CREATE TARGETS ==========
+    print("Creating targets...");
+
+    var targetCount = 10;
+    var targets = [];
+    var targetNodes = [];
+    var targetHit = [];
+
+    for (var i = 0; i < targetCount; i = i + 1)
+    {
+        var sphereMesh = createSphere(scene, "Target" + i, 1.5, 24, 24);
+        var sphere = scene.createEntity(sphereMesh);
+        sphere.castShadows = true;
+
+        var targetNode = rootNode.createChild();
+        targetNode.attachObject(sphere);
+
+        // Position in arc
+        var angle = (i / targetCount) * 3.14159;
+        var radius = 20.0 + (i % 3) * 5.0;
+        targetNode.setPosition(
+            cos(angle) * radius,
+            3.0 + (i % 4) * 2.0,
+            sin(angle) * radius
+        );
+
+        // Red material
+        var targetMat = createMaterial("TargetMat" + i);
+        targetMat.setDiffuse(0.9, 0.1, 0.1, 1.0);
+        targetMat.setSpecular(0.5, 0.5, 0.5, 64.0);
+        sphere.setMaterialName("TargetMat" + i);
+
+        targets[i] = sphere;
+        targetNodes[i] = targetNode;
+        targetHit[i] = false;
+    }
+
+    // ========== MUZZLE FLASH PARTICLES ==========
+    var muzzleFlash = createParticleSystem(scene, "MuzzleFlash", "Examples/Smoke");
+    muzzleFlash.emitting = false;
+    var flashNode = rootNode.createChild();
+    flashNode.attachObject(muzzleFlash);
+
+    // ========== CAMERA FPS STYLE ==========
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 5, 0);
+
+    var viewport = Viewport(cam);
+
+    // ========== CROSSHAIR OVERLAY ==========
+    var overlay = createOverlay("Crosshair");
+    var crosshair = createTextArea("CrosshairText");
+    crosshair.setCaption("+");
+    crosshair.setMetricsMode(1);  // Relative
+    crosshair.setPosition(0.48, 0.45);
+    crosshair.setCharHeight(0.05);
+    crosshair.setColour(1.0, 1.0, 1.0, 1.0);
+
+    // Score
+    var scoreText = createTextArea("ScoreText");
+    scoreText.setCaption("Score: 0");
+    scoreText.setMetricsMode(0);  // Pixels
+    scoreText.setPosition(10, 50);
+    scoreText.setCharHeight(20);
+    scoreText.setColour(1.0, 1.0, 0.0, 1.0);
+
+    var panel = createPanel("UIPanel");
+    panel.setMetricsMode(1);
+    panel.setPosition(0, 0);
+    panel.setDimensions(1.0, 1.0);
+    panel.addChild(crosshair);
+    panel.addChild(scoreText);
+
+    overlay.addElement(panel);
+    overlay.show();
+
+    // FPS
+    createFPSOverlay();
+
+    var yaw = 0.0;
+    var pitch = 0.0;
+    var score = 0;
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+
+    print("Ready! Aim and click to shoot!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // FPS
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+        if (fpsTimer >= 1.0)
+        {
+            updateFPSText(frameCount);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // Mouse look
+        var mouseX = getMouseDeltaX();
+        var mouseY = getMouseDeltaY();
+
+        yaw = yaw - mouseX * 0.2;
+        pitch = pitch - mouseY * 0.2;
+
+        if (pitch > 60.0) pitch = 60.0;
+        if (pitch < -60.0) pitch = -60.0;
+
+        cameraNode.yaw(yaw);
+        cameraNode.pitch(pitch);
+
+        // SHOOT!
+        if (isMouseButtonPressed(MOUSE_LEFT))
+        {
+            print("BANG!");
+
+            // Muzzle flash
+            flashNode.setPosition(0, 5, -2);
+            muzzleFlash.clear();
+            muzzleFlash.emitting = true;
+            muzzleFlash.fastForward(0.1);
+
+            // Raycast
+            var distance, hitName, hitX, hitY, hitZ = raycastFromMouse(
+                scene, cam, 640, 360, 1280, 720
+            );
+
+            if (distance > 0)
+            {
+                print("HIT: " + hitName + " at distance " + distance);
+
+                // Check if it's a target
+                for (var i = 0; i < targetCount; i = i + 1)
+                {
+                    if (!targetHit[i])
+                    {
+                        // Simple check (would need better name matching)
+                        targetHit[i] = true;
+                        score = score + 100;
+                        scoreText.setCaption("Score: " + score);
+
+                        // Change to green
+                        var hitMat = getMaterial("TargetMat" + i);
+                        hitMat.setDiffuse(0.1, 0.9, 0.1, 1.0);
+
+                        print("TARGET DOWN! +100 points");
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Stop muzzle flash
+        if (muzzleFlash.emitting && muzzleFlash.getNumParticles() == 0)
+        {
+            muzzleFlash.emitting = false;
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+

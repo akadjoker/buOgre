@@ -1,0 +1,205 @@
+// ============================================================
+// OVERLAY SYSTEM EXAMPLE - FPS Counter
+// ============================================================
+
+include "keys.bu";
+
+def main()
+{
+    print("=== FPS Counter Example ===");
+
+    CreateEngine(1280, 720, "FPS Counter", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Create some rotating cubes to test performance
+    var cubes = 0;
+    var cubeCount = 100;
+    for (var i = 0; i < cubeCount; i = i + 1)
+    {
+        var angle = (i / cubeCount) * 6.28318;
+        var radius = 20.0 + (i % 5) * 5.0;
+
+        var cubeMesh = createCube(scene, "Cube" + i, 2.0);
+        var cube = scene.createEntity(cubeMesh);
+        var cubeNode = rootNode.createChild();
+        cubeNode.attachObject(cube);
+        cubeNode.setPosition(
+            cos(angle) * radius,
+            3.0,
+            sin(angle) * radius
+        );
+    }
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 30, 50);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.5);
+
+    // ========== CREATE FPS OVERLAY ==========
+
+    var success = createFPSOverlay();
+    if (success)
+    {
+        print("FPS overlay created!");
+    }
+    else
+    {
+        print("Warning: FPS overlay creation failed (font may not be loaded)");
+    }
+
+    // FPS calculation
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+    var currentFPS = 0;
+
+    print("Watch the FPS counter in top-left corner!");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Calculate FPS
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+
+        if (fpsTimer >= 1.0)
+        {
+            currentFPS = frameCount;
+            updateFPSText(currentFPS);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // Rotate camera
+        rotation = rotation + 20.0 * deltaTime;
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// CUSTOM OVERLAY EXAMPLE - Manual creation
+// ============================================================
+
+def custom_overlay_example()
+{
+    print("=== Custom Overlay Example ===");
+    print("Create custom text and panels");
+
+    CreateEngine(1280, 720, "Custom Overlay", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 10, 30);
+    cameraNode.lookAt(0, 5, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.15);
+
+    // ========== CREATE CUSTOM OVERLAY ==========
+
+    // Create overlay container
+    var overlay = createOverlay("MyOverlay");
+
+    // Create panel (background)
+    var panel = createPanel("MyPanel");
+    panel.setMetricsMode(0);  // Pixels
+    panel.setPosition(10, 10);
+    panel.setDimensions(300, 150);
+    // panel.setMaterialName("SomeMaterial");  // Optional background
+
+    // Create title text
+    var titleText = createTextArea("TitleText");
+    titleText.setMetricsMode(0);  // Pixels
+    titleText.setPosition(10, 10);
+    titleText.setDimensions(280, 30);
+    titleText.setCharHeight(20);
+    titleText.setFontName("BlueHighway");
+    titleText.setColour(1.0, 1.0, 0.0, 1.0);  // Yellow
+    titleText.setCaption("=== Game HUD ===");
+
+    // Create info text
+    var infoText = createTextArea("InfoText");
+    infoText.setMetricsMode(0);
+    infoText.setPosition(10, 40);
+    infoText.setDimensions(280, 100);
+    infoText.setCharHeight(14);
+    infoText.setFontName("BlueHighway");
+    infoText.setColour(0.8, 0.8, 0.8, 1.0);  // Light gray
+    infoText.setCaption("Health: 100\nAmmo: 50\nScore: 0");
+
+    // Add elements to panel
+    panel.addChild(titleText);
+    panel.addChild(infoText);
+
+    // Add panel to overlay
+    overlay.addElement(panel);
+
+    // Show overlay
+    overlay.show();
+    overlay.setZOrder(100);
+
+    print("Custom overlay created!");
+
+    var score = 0;
+    var timer = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Update score every second
+        timer = timer + deltaTime;
+        if (timer >= 1.0)
+        {
+            score = score + 10;
+            infoText.setCaption("Health: 100\nAmmo: 50\nScore: " + score);
+            timer = 0.0;
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// Helper functions (placeholders)
+def cos(x) { return 0.0; }
+def sin(x) { return 0.0; }

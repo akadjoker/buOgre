@@ -1,0 +1,142 @@
+// include "player.bu";
+// include "enemy.bu";
+include "keys.bu";
+
+//width, height, "title", monitor, fullscreen, canResize)
+ CreateEngine(1024, 720, "buOgre Application", 1, false, true);
+ 
+
+var scene = Scene();
+scene.setAmbientLight(0.3, 0.3, 0.3);
+scene.setShadowTechnique(1);
+
+// Get the root SceneNode from the scene
+var rootNode = scene.getRoot();
+
+// Create a directional light
+//var pointLight = Light(scene, "PointLight", 0);  // 0 = point light type, 1 = directional, 2 = spotlight
+var pointLight = scene.createLight("PointLight", 0);  // 0 = point light type, 1 = directional, 2 = spotlight
+pointLight.setDiffuse(1.0, 1.0, 1.0);
+
+var lightNode = rootNode.createChild();
+lightNode.attachObject(pointLight);
+lightNode.setPosition(200, 150, -250);
+
+
+
+CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+ 
+
+
+
+// Create a child node
+var childNode = rootNode.createChild();
+childNode.setPosition(5.0, 10.0, 15.0);
+childNode.setScale(2.0, 2.0, 2.0);
+
+// Test translate
+childNode.translate(1.0, 2.0, 3.0);
+ 
+var cam = scene.createCamera("MainCam");
+
+var camera = rootNode.createChild();
+camera.attachObject(cam);
+camera.setPosition(0, 50, 200);
+camera.lookAt(0, 0, 0);
+
+// Camera speed
+var camSpeed = 100.0;  // unidades por segundo
+var camMouseSensitivity = 0.1;
+var camPitch = 0.0;
+var camYaw = 0.0;
+var lastMouseX = 0;
+var lastMouseY = 0;
+
+
+
+var entity = scene.createEntity("ground");
+var node = rootNode.createChild();
+node.attachObject(entity);
+node.setPosition(0, 0, 0);
+node.setScale(1, 1, 1);
+
+var ogreHead = scene.createEntity("ogrehead.mesh");
+ogreHead.castShadows = true;
+var headNode = rootNode.createChild();
+headNode.attachObject(ogreHead);
+headNode.setPosition(0, 20, 10);
+headNode.setScale(1, 1, 1);
+
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+
+def update_camera(deltaTime)
+{
+    var moveDir = 0.0;  // -1 = trás, 1 = frente
+    var strafeDir = 0.0;  // -1 = esquerda, 1 = direita
+    var vertDir = 0.0;  // -1 = baixo, 1 = cima
+    
+    if (isKeyDown(KEY_W)) moveDir = moveDir - 1.0;
+    if (isKeyDown(KEY_S)) moveDir = moveDir + 1.0;
+    if (isKeyDown(KEY_D)) strafeDir = strafeDir + 1.0;
+    if (isKeyDown(KEY_A)) strafeDir = strafeDir - 1.0;
+    if (isKeyDown(KEY_SPACE)) vertDir = vertDir + 1.0;
+    if (isKeyDown(KEY_LCTRL)) vertDir = vertDir - 1.0;
+    
+    // Aplicar movimento
+    var speed = camSpeed * deltaTime;
+    if (moveDir != 0.0 || strafeDir != 0.0 || vertDir != 0.0)
+    {
+        camera.moveRelative(strafeDir * speed, vertDir * speed, moveDir * speed);
+    }
+    
+    // Rotação com mouse
+    var mouseX = getMouseX();
+    var mouseY = getMouseY();
+    
+    if (lastMouseX == 0 && lastMouseY == 0)
+    {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+    }
+    
+    var mouseDeltaX = mouseX - lastMouseX;
+    var mouseDeltaY = mouseY - lastMouseY;
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+    
+    if (isMouseButtonDown(MOUSE_LEFT))
+    {
+        camYaw = camYaw + mouseDeltaX * camMouseSensitivity;
+        camPitch = camPitch + mouseDeltaY * camMouseSensitivity;
+        
+        // Limitar pitch para não ficar virado
+        if (camPitch > 89.0) camPitch = 89.0;
+        if (camPitch < -89.0) camPitch = -89.0;
+        
+        // Aplicar rotação
+        camera.resetOrientation();
+        camera.yaw(-camYaw);
+        camera.pitch(camPitch);
+
+        setMousePosition(mouseX,mouseY);
+    }
+       
+}
+
+
+while(EngineCanUpdate()) 
+{
+    var deltaTime = getDeltaTime();
+    var fps = getFPS();
+    var elapsed = getElapsedTime();
+    
+    update_camera( deltaTime );
+  
+    UpdateEngine(deltaTime);
+}
+
+
+ReleaseEngine();

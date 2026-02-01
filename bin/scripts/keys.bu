@@ -1,0 +1,106 @@
+// SDL Scancode varants  
+
+// Letters
+var KEY_A = 4;
+var KEY_B = 5;
+var KEY_C = 6;
+var KEY_D = 7;
+var KEY_E = 8;
+var KEY_F = 9;
+var KEY_G = 10;
+var KEY_H = 11;
+var KEY_I = 12;
+var KEY_J = 13;
+var KEY_K = 14;
+var KEY_L = 15;
+var KEY_M = 16;
+var KEY_N = 17;
+var KEY_O = 18;
+var KEY_P = 19;
+var KEY_Q = 20;
+var KEY_R = 21;
+var KEY_S = 22;
+var KEY_T = 23;
+var KEY_U = 24;
+var KEY_V = 25;
+var KEY_W = 26;
+var KEY_X = 27;
+var KEY_Y = 28;
+var KEY_Z = 29;
+
+// Numbers
+var KEY_0 = 39;
+var KEY_1 = 30;
+var KEY_2 = 31;
+var KEY_3 = 32;
+var KEY_4 = 33;
+var KEY_5 = 34;
+var KEY_6 = 35;
+var KEY_7 = 36;
+var KEY_8 = 37;
+var KEY_9 = 38;
+
+// Special Keys
+var KEY_RETURN = 40;
+var KEY_ESCAPE = 41;
+var KEY_BACKSPACE = 42;
+var KEY_TAB = 43;
+var KEY_SPACE = 44;
+
+// Modifiers
+var KEY_LSHIFT = 225;
+var KEY_RSHIFT = 229;
+var KEY_LCTRL = 224;
+var KEY_RCTRL = 228;
+var KEY_LALT = 226;
+var KEY_RALT = 230;
+var KEY_LGUI = 227;  // Windows/Command key
+var KEY_RGUI = 231;
+
+// Arrow Keys
+var KEY_UP = 82;
+var KEY_DOWN = 81;
+var KEY_LEFT = 80;
+var KEY_RIGHT = 79;
+
+// Function Keys
+var KEY_F1 = 58;
+var KEY_F2 = 59;
+var KEY_F3 = 60;
+var KEY_F4 = 61;
+var KEY_F5 = 62;
+var KEY_F6 = 63;
+var KEY_F7 = 64;
+var KEY_F8 = 65;
+var KEY_F9 = 66;
+var KEY_F10 = 67;
+var KEY_F11 = 68;
+var KEY_F12 = 69;
+
+// Other common keys
+var KEY_INSERT = 73;
+var KEY_DELETE = 76;
+var KEY_HOME = 74;
+var KEY_END = 77;
+var KEY_PAGEUP = 75;
+var KEY_PAGEDOWN = 78;
+
+// Numpad
+var KEY_KP_0 = 98;
+var KEY_KP_1 = 89;
+var KEY_KP_2 = 90;
+var KEY_KP_3 = 91;
+var KEY_KP_4 = 92;
+var KEY_KP_5 = 93;
+var KEY_KP_6 = 94;
+var KEY_KP_7 = 95;
+var KEY_KP_8 = 96;
+var KEY_KP_9 = 97;
+var KEY_KP_MINUS = 86;
+var KEY_KP_PLUS = 87;
+var KEY_KP_ENTER = 104;
+
+// Mouse buttons
+var MOUSE_LEFT = 0;
+var MOUSE_RIGHT = 1;
+var MOUSE_MIDDLE = 2;

@@ -1,0 +1,548 @@
+// ============================================================
+// MANUAL GEOMETRY CREATION EXAMPLES
+// Demonstra criação dinâmica de geometria via ManualObject
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// EXEMPLO 1: Criar um triângulo simples
+// ============================================================
+
+def simple_triangle()
+{
+    print("=== Simple Triangle Example ===");
+
+    CreateEngine(1280, 720, "Manual Triangle", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // Criar ManualObject
+    var manual = createManualObject(scene, "MyTriangle");
+
+    // Começar construção (material, tipo de operação)
+    // Tipo 4 = TRIANGLE_LIST
+    manual.begin("BaseWhiteNoLighting", 4);
+
+    // Adicionar 3 vértices
+    manual.position(0.0, 5.0, 0.0);     // Topo
+    manual.normal(0.0, 0.0, 1.0);
+    manual.textureCoord(0.5, 0.0);
+    manual.colour(1.0, 0.0, 0.0, 1.0);  // Vermelho
+
+    manual.position(-3.0, 0.0, 0.0);    // Esquerda
+    manual.normal(0.0, 0.0, 1.0);
+    manual.textureCoord(0.0, 1.0);
+    manual.colour(0.0, 1.0, 0.0, 1.0);  // Verde
+
+    manual.position(3.0, 0.0, 0.0);     // Direita
+    manual.normal(0.0, 0.0, 1.0);
+    manual.textureCoord(1.0, 1.0);
+    manual.colour(0.0, 0.0, 1.0, 1.0);  // Azul
+
+    // Definir triângulo (índices 0, 1, 2)
+    manual.triangle(0, 1, 2);
+
+    // Finalizar
+    manual.end();
+
+    // Anexar à cena
+    var triangleNode = rootNode.createChild();
+    triangleNode.attachObject(manual);
+    triangleNode.setPosition(0, 0, 0);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 3, 15);
+    cameraNode.lookAt(0, 2, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.15);
+
+    print("Triangle created! Press ESC to exit");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Rodar triângulo
+        triangleNode.yaw(30.0 * deltaTime);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 2: Criar GRASS dinâmico
+// ============================================================
+
+def grass_field()
+{
+    print("=== Dynamic Grass Field ===");
+
+    CreateEngine(1280, 720, "Grass Field", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.6, 0.6, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 0.9);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(300, 500, 300);
+
+    // ========== CRIAR GRASS ==========
+
+    print("Creating grass patches...");
+
+    var manual = createManualObject(scene, "GrassField");
+    manual.castShadows = false;
+    manual.begin("BaseWhiteNoLighting", 4);  // TRIANGLE_LIST
+
+    var grassCount = 0;
+    var gridSize = 20;
+    var spacing = 2.0;
+
+    // Criar patches de grass
+    for (var x = 0; x < gridSize; x = x + 1)
+    {
+        for (var z = 0; z < gridSize; z = z + 1)
+        {
+            var posX = (x - gridSize / 2) * spacing;
+            var posZ = (z - gridSize / 2) * spacing;
+
+            // Randomizar um pouco a posição
+            posX = posX + (random() - 0.5) * spacing * 0.5;
+            posZ = posZ + (random() - 0.5) * spacing * 0.5;
+
+            var grassHeight = 1.5 + random() * 0.5;
+            var grassWidth = 0.6;
+
+            // Criar quad vertical (grass blade)
+            var baseIdx = grassCount * 4;
+
+            // Vértices do quad
+            manual.position(posX - grassWidth * 0.5, 0.0, posZ);
+            manual.normal(0, 0, 1);
+            manual.textureCoord(0, 1);
+            manual.colour(0.2, 0.6, 0.2, 1.0);
+
+            manual.position(posX + grassWidth * 0.5, 0.0, posZ);
+            manual.normal(0, 0, 1);
+            manual.textureCoord(1, 1);
+            manual.colour(0.2, 0.6, 0.2, 1.0);
+
+            manual.position(posX + grassWidth * 0.5, grassHeight, posZ);
+            manual.normal(0, 0, 1);
+            manual.textureCoord(1, 0);
+            manual.colour(0.3, 0.8, 0.3, 1.0);
+
+            manual.position(posX - grassWidth * 0.5, grassHeight, posZ);
+            manual.normal(0, 0, 1);
+            manual.textureCoord(0, 0);
+            manual.colour(0.3, 0.8, 0.3, 1.0);
+
+            // Dois triângulos formam o quad
+            manual.triangle(baseIdx + 0, baseIdx + 1, baseIdx + 2);
+            manual.triangle(baseIdx + 0, baseIdx + 2, baseIdx + 3);
+
+            grassCount = grassCount + 1;
+        }
+    }
+
+    manual.end();
+
+    print("Created " + grassCount + " grass blades!");
+
+    var grassNode = rootNode.createChild();
+    grassNode.attachObject(manual);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 10, 30);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.4, 0.6, 0.9);
+
+    var cameraAngle = 0.0;
+
+    print("Watch the grass field! Use arrow keys to rotate camera");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Rotate camera
+        if (isKeyDown(KEY_LEFT)) cameraAngle = cameraAngle + 60.0 * deltaTime;
+        if (isKeyDown(KEY_RIGHT)) cameraAngle = cameraAngle - 60.0 * deltaTime;
+
+        var angleRad = cameraAngle * 0.0174533;
+        var camX = sin(angleRad) * 35.0;
+        var camZ = cos(angleRad) * 35.0;
+        cameraNode.setPosition(camX, 10, camZ);
+        cameraNode.lookAt(0, 0, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 3: DECALS no chão
+// ============================================================
+
+def ground_decals()
+{
+    print("=== Ground Decals Example ===");
+
+    CreateEngine(1280, 720, "Ground Decals", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // Light
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // ========== CRIAR DECALS ==========
+
+    print("Creating decals...");
+
+    var manual = createManualObject(scene, "Decals");
+    manual.begin("BaseWhiteNoLighting", 4);
+
+    var decalCount = 0;
+
+    // Criar vários decals circulares
+    for (var i = 0; i < 10; i = i + 1)
+    {
+        var x = (random() - 0.5) * 40.0;
+        var z = (random() - 0.5) * 40.0;
+        var size = 2.0 + random() * 3.0;
+
+        var baseIdx = decalCount * 4;
+
+        var halfSize = size * 0.5;
+
+        // Quad horizontal (levemente acima do chão)
+        manual.position(x - halfSize, 0.1, z - halfSize);
+        manual.normal(0, 1, 0);
+        manual.textureCoord(0, 1);
+        manual.colour(0.8, 0.2, 0.2, 0.8);  // Vermelho semi-transparente
+
+        manual.position(x + halfSize, 0.1, z - halfSize);
+        manual.normal(0, 1, 0);
+        manual.textureCoord(1, 1);
+        manual.colour(0.8, 0.2, 0.2, 0.8);
+
+        manual.position(x + halfSize, 0.1, z + halfSize);
+        manual.normal(0, 1, 0);
+        manual.textureCoord(1, 0);
+        manual.colour(0.8, 0.2, 0.2, 0.8);
+
+        manual.position(x - halfSize, 0.1, z + halfSize);
+        manual.normal(0, 1, 0);
+        manual.textureCoord(0, 0);
+        manual.colour(0.8, 0.2, 0.2, 0.8);
+
+        manual.triangle(baseIdx + 0, baseIdx + 1, baseIdx + 2);
+        manual.triangle(baseIdx + 0, baseIdx + 2, baseIdx + 3);
+
+        decalCount = decalCount + 1;
+    }
+
+    manual.end();
+
+    print("Created " + decalCount + " decals!");
+
+    var decalNode = rootNode.createChild();
+    decalNode.attachObject(manual);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 20, 30);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.4);
+
+    print("Decals placed! Arrow keys to rotate camera");
+
+    var cameraAngle = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        if (isKeyDown(KEY_LEFT)) cameraAngle = cameraAngle + 60.0 * deltaTime;
+        if (isKeyDown(KEY_RIGHT)) cameraAngle = cameraAngle - 60.0 * deltaTime;
+
+        var angleRad = cameraAngle * 0.0174533;
+        var camX = sin(angleRad) * 40.0;
+        var camZ = cos(angleRad) * 40.0;
+        cameraNode.setPosition(camX, 20, camZ);
+        cameraNode.lookAt(0, 0, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 4: GRID dinâmico (como debug visualization)
+// ============================================================
+
+def debug_grid()
+{
+    print("=== Debug Grid Example ===");
+
+    CreateEngine(1280, 720, "Debug Grid", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // ========== CRIAR GRID ==========
+
+    var manual = createManualObject(scene, "DebugGrid");
+    manual.begin("BaseWhiteNoLighting", 2);  // LINE_LIST
+
+    var gridSize = 20;
+    var cellSize = 2.0;
+    var halfGrid = gridSize * cellSize * 0.5;
+
+    // Linhas verticais (paralelas a Z)
+    for (var x = 0; x <= gridSize; x = x + 1)
+    {
+        var posX = x * cellSize - halfGrid;
+
+        manual.position(posX, 0, -halfGrid);
+        manual.colour(0.5, 0.5, 0.5, 1.0);
+
+        manual.position(posX, 0, halfGrid);
+        manual.colour(0.5, 0.5, 0.5, 1.0);
+    }
+
+    // Linhas horizontais (paralelas a X)
+    for (var z = 0; z <= gridSize; z = z + 1)
+    {
+        var posZ = z * cellSize - halfGrid;
+
+        manual.position(-halfGrid, 0, posZ);
+        manual.colour(0.5, 0.5, 0.5, 1.0);
+
+        manual.position(halfGrid, 0, posZ);
+        manual.colour(0.5, 0.5, 0.5, 1.0);
+    }
+
+    // Eixos principais (X em vermelho, Z em azul)
+    manual.position(0, 0, 0);
+    manual.colour(1.0, 0.0, 0.0, 1.0);
+    manual.position(halfGrid, 0, 0);
+    manual.colour(1.0, 0.0, 0.0, 1.0);
+
+    manual.position(0, 0, 0);
+    manual.colour(0.0, 0.0, 1.0, 1.0);
+    manual.position(0, 0, halfGrid);
+    manual.colour(0.0, 0.0, 1.0, 1.0);
+
+    manual.end();
+
+    var gridNode = rootNode.createChild();
+    gridNode.attachObject(manual);
+
+    // Cubo no centro
+    var cubeMesh = createCube(scene, "DebugCube", 3.0);
+    var cubeEntity = scene.createEntity(cubeMesh);
+    var cubeNode = rootNode.createChild();
+    cubeNode.attachObject(cubeEntity);
+    cubeNode.setPosition(0, 1.5, 0);
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(25, 20, 25);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.1);
+
+    print("Debug grid with axes! X=red, Z=blue");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        rotation = rotation + 20.0 * deltaTime;
+        cubeNode.yaw(20.0 * deltaTime);
+
+        // Rodar câmera
+        var angleRad = rotation * 0.0174533;
+        var camX = sin(angleRad) * 35.0;
+        var camZ = cos(angleRad) * 35.0;
+        cameraNode.setPosition(camX, 20, camZ);
+        cameraNode.lookAt(0, 0, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// EXEMPLO 5: CONVERT TO MESH (criar e salvar)
+// ============================================================
+
+def convert_to_mesh()
+{
+    print("=== Convert To Mesh Example ===");
+    print("Create geometry and save as permanent mesh");
+
+    CreateEngine(1280, 720, "Convert to Mesh", 1, false, true);
+
+    var scene = Scene();
+    scene.setAmbientLight(0.7, 0.7, 0.7);
+    var rootNode = scene.getRoot();
+
+    // Ground
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== CRIAR ESTRELA ==========
+
+    var manual = createManualObject(scene, "StarManual");
+    manual.begin("BaseWhiteNoLighting", 4);
+
+    var points = 5;
+    var outerRadius = 3.0;
+    var innerRadius = 1.5;
+    var height = 1.0;
+
+    // Centro
+    manual.position(0, height, 0);
+    manual.normal(0, 1, 0);
+    manual.textureCoord(0.5, 0.5);
+    manual.colour(1.0, 1.0, 0.0, 1.0);
+
+    var vertexCount = 1;
+
+    // Vértices externos e internos
+    for (var i = 0; i < points * 2; i = i + 1)
+    {
+        var angle = (i / (points * 2.0)) * 6.28318;  // 2*PI
+        var radius = outerRadius;
+        if (i % 2 == 1) radius = innerRadius;
+
+        var x = cos(angle) * radius;
+        var z = sin(angle) * radius;
+
+        manual.position(x, height, z);
+        manual.normal(0, 1, 0);
+        manual.textureCoord(0.5 + cos(angle) * 0.5, 0.5 + sin(angle) * 0.5);
+        manual.colour(1.0, 1.0, 0.0, 1.0);
+
+        // Triângulo do centro ao vértice atual e próximo
+        if (i > 0)
+        {
+            manual.triangle(0, vertexCount - 1, vertexCount);
+        }
+
+        vertexCount = vertexCount + 1;
+    }
+
+    // Fechar a estrela
+    manual.triangle(0, vertexCount - 1, 1);
+
+    manual.end();
+
+    // Converter para mesh permanente
+    var meshName = manual.convertToMesh("StarMesh.mesh");
+    print("Mesh created: " + meshName);
+
+    // Criar várias instâncias da mesh
+    for (var i = 0; i < 5; i = i + 1)
+    {
+        var starEntity = scene.createEntity(meshName);
+        starEntity.castShadows = true;
+        var starNode = rootNode.createChild();
+        starNode.attachObject(starEntity);
+
+        var angle = (i / 5.0) * 6.28318;
+        starNode.setPosition(cos(angle) * 8.0, 1, sin(angle) * 8.0);
+        starNode.setScale(1.5, 1.5, 1.5);
+    }
+
+    // Camera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 15, 25);
+    cameraNode.lookAt(0, 0, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.2);
+
+    print("Star mesh instantiated 5 times!");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        rotation = rotation + 15.0 * deltaTime;
+        var angleRad = rotation * 0.0174533;
+        var camX = sin(angleRad) * 30.0;
+        var camZ = cos(angleRad) * 30.0;
+        cameraNode.setPosition(camX, 15, camZ);
+        cameraNode.lookAt(0, 0, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// Helper: random number 0-1
+def random()
+{
+    return getTime() % 1000 / 1000.0;
+}

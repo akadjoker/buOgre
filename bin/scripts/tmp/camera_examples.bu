@@ -477,8 +477,7 @@ def example_third_person()
 
     // ========== THIRD PERSON CONTROLLER ==========
     var tpController = ThirdPersonController(cameraNode, playerNode);
- 
-    tpController.setOffset(0, 80.0, 200);
+     tpController.setOffset(0, 80.0, 200);
    
  
     var viewport = Viewport(cam);
@@ -516,8 +515,8 @@ def example_third_person()
 
         // ========== PLAYER MOVEMENT ==========
         var moveSpeed = playerSpeed * deltaTime;
-        if (isKeyDown(KEY_W)) playerNode.translate(0, 0, moveSpeed, 1);
-        if (isKeyDown(KEY_S)) playerNode.translate(0, 0, -moveSpeed, 1);
+        if (isKeyDown(KEY_W)) playerNode.move(100, deltaTime);
+        if (isKeyDown(KEY_S)) playerNode.move(-100, deltaTime);
         if (isKeyDown(KEY_A)) playerNode.translate(moveSpeed, 0, 0, 1);
         if (isKeyDown(KEY_D)) playerNode.translate(-moveSpeed, 0, 0, 1);
 

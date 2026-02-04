@@ -1,0 +1,344 @@
+// ============================================================
+// TUTORIAL 1 - BÁSICO DO ENGINE
+// Aprenda: Janela, Câmera, Luz, Geometria, Input
+// ============================================================
+
+include "keys.bu";
+include "constants.bu";
+
+
+// ============================================================
+// PASSO 1: Criar janela e configurar recursos
+// ============================================================
+
+def step1_hello_window()
+{
+    print("=== Tutorial 1.1 - Hello Window ===");
+    print("Criando janela do Ogre");
+
+    // Criar engine: largura, altura, título, monitor, fullscreen, canResize
+    CreateEngine(1280, 720, "Meu Primeiro Projeto", 0, false, true);
+
+    // IMPORTANTE: Carregar recursos ANTES de usar
+    print("Carregando recursos...");
+
+    // Adicionar locais de recursos (pasta media)
+    addResourceLocation("./media", "FileSystem", "General");
+    addResourceLocation("./media/materials/scripts", "FileSystem", "General");
+    addResourceLocation("./media/materials/textures", "FileSystem", "General");
+    addResourceLocation("./media/models", "FileSystem", "General");
+
+    // Inicializar todos os recursos
+    initialiseAllResourceGroups();
+    print("Recursos carregados!");
+
+    // Criar cena
+    var scene = CreateScene("MainScene");
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+
+    var rootNode = scene.getRootNode();
+
+    // Criar câmera
+    var cam = CreateCamera(scene, "MainCam");
+    cam.setNearClipDistance(0.5);
+    cam.setAutoAspectRatio(true);
+
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 5, 15);
+    cameraNode.lookAt(0, 0, 0, TS_WORLD);
+
+    // Criar viewport
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.2, 0.3);
+
+    print("Janela criada! Pressione ESC para sair");
+
+    // Loop principal
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        updateInput();
+
+        if (isKeyPressed(KEY_ESCAPE))
+        {
+            break;
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 2: Adicionar luz
+// ============================================================
+
+def step2_add_light()
+{
+    print("=== Tutorial 1.2 - Adicionar Luz ===");
+
+    CreateEngine(1280, 720, "Tutorial - Luz", 0, false, true);
+
+    // Recursos
+    addResourceLocation("./media", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = CreateScene("MainScene");
+    scene.setAmbientLight(0.2, 0.2, 0.2);  // Luz ambiente fraca
+    var rootNode = scene.getRootNode();
+
+    // ========== CRIAR LUZ DIRECIONAL ==========
+    var light = CreateLight(scene, "MainLight");
+    light.setType(0);  // Tipo 0 = Direcional
+    light.setDirection(1, -1, -1);
+    light.setDiffuse(1.0, 1.0, 0.9);  // Cor amarelada (sol)
+
+    print("Luz criada!");
+
+    // Câmera
+    var cam = CreateCamera(scene, "MainCam");
+    cam.setNearClipDistance(0.5);
+    cam.setAutoAspectRatio(true);
+
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 5, 15);
+    cameraNode.lookAt(0, 0, 0, TS_WORLD);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.4);
+
+    print("Luz adicionada! Vamos adicionar objetos no próximo passo");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        updateInput();
+
+        if (isKeyPressed(KEY_ESCAPE))
+        {
+            break;
+        }
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 3: Criar geometria
+// ============================================================
+
+def step3_create_geometry()
+{
+    print("=== Tutorial 1.3 - Criar Geometria ===");
+
+    CreateEngine(1280, 720, "Tutorial - Geometria", 1, false, true);
+
+    addResourceLocation("./media", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = CreateScene("MainScene");
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    SetCastShadows(scene, true);  // Ativar sombras!
+    var rootNode = scene.getRootNode();
+
+    // Luz
+    var light = CreateLight(scene, "MainLight");
+    light.setType(0); // Directional
+    light.setDirection(1, -1, -1);
+    light.setDiffuse(1.0, 1.0, 0.9);
+
+    // ========== CRIAR CHÃO ==========
+    var ground = CreatePlane(scene, "GroundPlane", 100, 100, 10, 10);
+    var groundNode = rootNode.createChild();
+    groundNode.setPosition(0, 0, 0);
+    groundNode.attachObject(ground);
+
+    var groundMat = createMaterial("GroundMat");
+    groundMat.setDiffuse(0.4, 0.6, 0.4, 1.0);
+    ground.setMaterialName("GroundMat");
+
+    print("Chão criado!");
+
+    // ========== CRIAR CUBO PROCEDURAL ==========
+    var cubeEntity = createCube(scene, "MyCube", 2.0);
+    cubeEntity.setCastShadows(true);  // Cubo projeta sombra
+
+    var cubeMat = createMaterial("CubeMat");
+    cubeMat.setDiffuse(0.8, 0.4, 0.2, 1.0);
+    cubeMat.setSpecular(1.0, 1.0, 1.0, 32.0);
+    cubeEntity.setMaterialName("CubeMat");
+
+    var cubeNode = rootNode.createChild();
+    cubeNode.attachObject(cubeEntity);
+    cubeNode.setPosition(0, 1, 0);
+
+    print("Cubo criado!");
+
+    // Câmera
+    var cam = CreateCamera(scene, "MainCam");
+    cam.setNearClipDistance(0.5);
+    cam.setAutoAspectRatio(true);
+
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 5, 10);
+    cameraNode.lookAt(0, 1, 0, TS_WORLD);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.3, 0.4, 0.5);
+
+    print("Geometria criada! Veja o cubo com sombra");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        updateInput();
+
+        if (isKeyPressed(KEY_ESCAPE))
+        {
+            break;
+        }
+
+        // Rodar o cubo
+        cubeNode.yaw(30.0 * deltaTime, TS_LOCAL);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 4: Controles e movimento
+// ============================================================
+
+def step4_input_and_movement()
+{
+    print("=== Tutorial 1.4 - Input e Movimento ===");
+    print("WASD - Mover cubo");
+    print("Arrow Keys - Rotar cubo");
+    print("Space - Pular");
+
+    CreateEngine(1280, 720, "Tutorial - Input", 1, false, true);
+
+    
+    var scene = Scene();
+    scene.setAmbientLight(0.4, 0.4, 0.4);
+
+    var rootNode = scene.getRootNode();
+
+    // Luz
+    var light = CreateLight(scene, "MainLight");
+    light.setType(0); // Directional
+    light.setDirection(1, -1, -1);
+    light.setDiffuse(1.0, 1.0, 0.9);
+
+    // Chão
+    var ground = CreatePlane(scene, "GroundPlane", 1000, 1000, 20, 20);
+    var groundNode = rootNode.createChild();
+    groundNode.setPosition(0, 0, 0);
+    groundNode.attachObject(ground);
+
+    var groundMat = createMaterial("GroundMat");
+    groundMat.setDiffuse(0.3, 0.5, 0.3, 1.0);
+    ground.setMaterialName("GroundMat");
+
+    // Cubo controlável
+    var cubeEntity = createCube(scene, "PlayerCube", 2.0);
+    cubeEntity.setCastShadows(true);
+
+    var cubeMat = createMaterial("CubeMat");
+    cubeMat.setDiffuse(0.8, 0.3, 0.3, 1.0);
+    cubeMat.setSpecular(1.0, 1.0, 1.0, 32.0);
+    cubeEntity.setMaterialName("CubeMat");
+
+    var cubeNode = rootNode.createChild();
+    cubeNode.attachObject(cubeEntity);
+    cubeNode.setPosition(0, 1, 0);
+
+    // Câmera que segue o cubo
+    var cam = CreateCamera(scene, "MainCam");
+    cam.setNearClipDistance(0.5);
+    cam.setAutoAspectRatio(true);
+
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 6, 12);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.4, 0.5, 0.6);
+
+    // ========== VARIÁVEIS DE CONTROLE ==========
+    var moveSpeed = 10.0;
+    var rotateSpeed = 100.0;
+    var jumpVelocity = 0.0;
+    var gravity = 20.0;
+    var isOnGround = true;
+
+    print("Use WASD para mover, Setas para rotar, Space para pular!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        updateInput();
+
+        // Exit on ESC
+        if (isKeyPressed(KEY_ESCAPE))
+        {
+            break;
+        }
+
+        // ========== MOVIMENTO ==========
+        if (isKeyDown(KEY_W)) cubeNode.move(moveSpeed, deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_S)) cubeNode.move(-moveSpeed, deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_A)) cubeNode.strafe(-moveSpeed, deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_D)) cubeNode.strafe(moveSpeed, deltaTime, TS_LOCAL);
+
+        // ========== ROTAÇÃO ==========
+        if (isKeyDown(KEY_LEFT)) cubeNode.yaw(rotateSpeed * deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_RIGHT)) cubeNode.yaw(-rotateSpeed * deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_UP)) cubeNode.pitch(rotateSpeed * deltaTime, TS_LOCAL);
+        if (isKeyDown(KEY_DOWN)) cubeNode.pitch(-rotateSpeed * deltaTime, TS_LOCAL);
+
+        // ========== PULO (Física simples) ==========
+        var pos = cubeNode.position;
+
+        if (isKeyPressed(KEY_SPACE) && isOnGround)
+        {
+            jumpVelocity = 10.0;
+            isOnGround = false;
+            print("Jump!");
+        }
+
+        // Aplicar gravidade
+        if (!isOnGround)
+        {
+            jumpVelocity = jumpVelocity - gravity * deltaTime;
+            pos.y = pos.y + jumpVelocity * deltaTime;
+
+            if (pos.y <= 1.0)
+            {
+                pos.y = 1.0;
+                jumpVelocity = 0.0;
+                isOnGround = true;
+            }
+
+            cubeNode.setPosition(pos.x, pos.y, pos.z);
+        }
+
+        // ========== CÂMERA SEGUE CUBO ==========
+        var cubePos = cubeNode.position;
+        cameraNode.setPosition(cubePos.x, cubePos.y + 6, cubePos.z + 12);
+        cameraNode.lookAt(cubePos.x, cubePos.y, cubePos.z, TS_WORLD);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+ 

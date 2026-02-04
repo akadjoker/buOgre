@@ -4,52 +4,7 @@
 
 namespace OgreParticleSystemBindings
 {
-    // createParticleSystem(scene, "name", "templateName") - função global
-    int createParticleSystem(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 3)
-        {
-            Error("createParticleSystem: requires scene, name and template");
-            return 0;
-        }
-
-        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
-
-        if (!scene)
-        {
-            Error("createParticleSystem: invalid scene");
-            return 0;
-        }
-
-        const char *name = args[1].asStringChars();
-        const char *templateName = args[2].asStringChars();
-
-        Ogre::ParticleSystem *particleSystem = scene->createParticleSystem(name, templateName);
-
-        if (!particleSystem)
-        {
-            Error("createParticleSystem: failed to create particle system '%s' with template '%s'", name, templateName);
-            return 0;
-        }
-
-        // Get the ParticleSystem NativeClassDef
-        NativeClassDef *particleClass = nullptr;
-        if (!vm->tryGetNativeClassDef("ParticleSystem", &particleClass))
-        {
-            Error("ParticleSystem class not found in VM");
-            return 0;
-        }
-
-        // Create NativeClassInstance
-        Value particleValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = particleValue.asNativeClassInstance();
-        instance->klass = particleClass;
-        instance->userData = (void *)particleSystem;
-
-        vm->push(particleValue);
-        return 1;
-    }
+ 
 
     // ========== PARTICLE SYSTEM METHODS ==========
 
@@ -149,10 +104,8 @@ namespace OgreParticleSystemBindings
         vm.addNativeMethod(particle, "fastForward", particle_fastForward);
         vm.addNativeMethod(particle, "getNumParticles", particle_getNumParticles);
 
-        // Global functions
-        vm.registerNative("createParticleSystem", createParticleSystem, 3);
+ 
 
-        Info("ParticleSystem bindings registered");
     }
 
 } // namespace OgreParticleSystemBindings
@@ -161,51 +114,7 @@ namespace OgreParticleSystemBindings
 
 namespace OgreRibbonTrailBindings
 {
-    // createRibbonTrail(scene, "name") - função global
-    int createRibbonTrail(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("createRibbonTrail: requires scene and name");
-            return 0;
-        }
-
-        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
-
-        if (!scene)
-        {
-            Error("createRibbonTrail: invalid scene");
-            return 0;
-        }
-
-        const char *name = args[1].asStringChars();
-
-        Ogre::RibbonTrail *ribbonTrail = scene->createRibbonTrail(name);
-
-        if (!ribbonTrail)
-        {
-            Error("createRibbonTrail: failed to create ribbon trail '%s'", name);
-            return 0;
-        }
-
-        // Get the RibbonTrail NativeClassDef
-        NativeClassDef *ribbonClass = nullptr;
-        if (!vm->tryGetNativeClassDef("RibbonTrail", &ribbonClass))
-        {
-            Error("RibbonTrail class not found in VM");
-            return 0;
-        }
-
-        // Create NativeClassInstance
-        Value ribbonValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = ribbonValue.asNativeClassInstance();
-        instance->klass = ribbonClass;
-        instance->userData = (void *)ribbonTrail;
-
-        vm->push(ribbonValue);
-        return 1;
-    }
+  
 
     // ========== RIBBON TRAIL METHODS ==========
 
@@ -399,10 +308,9 @@ namespace OgreRibbonTrailBindings
         vm.addNativeMethod(ribbon, "setColourChange", ribbon_setColourChange);
         vm.addNativeMethod(ribbon, "setInitialWidth", ribbon_setInitialWidth);
 
-        // Global functions
-        vm.registerNative("createRibbonTrail", createRibbonTrail, 2);
-
-        Info("RibbonTrail bindings registered");
+        
+        
+ 
     }
 
 } // namespace OgreRibbonTrailBindings

@@ -7,50 +7,50 @@
 namespace OgreManualObjectBindings
 {
     // createManualObject(scene, "name") - função global
-    int createManualObject(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("createManualObject: requires scene and name");
-            return 0;
-        }
+    // int createManualObject(Interpreter *vm, int argCount, Value *args)
+    // {
+    //     if (argCount < 2)
+    //     {
+    //         Error("createManualObject: requires scene and name");
+    //         return 0;
+    //     }
 
-        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
+    //     NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
+    //     Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
 
-        if (!scene)
-        {
-            Error("createManualObject: invalid scene");
-            return 0;
-        }
+    //     if (!scene)
+    //     {
+    //         Error("createManualObject: invalid scene");
+    //         return 0;
+    //     }
 
-        const char *name = args[1].asStringChars();
+    //     const char *name = args[1].asStringChars();
 
-        Ogre::ManualObject *manual = scene->createManualObject(name);
+    //     Ogre::ManualObject *manual = scene->createManualObject(name);
 
-        if (!manual)
-        {
-            Error("createManualObject: failed to create manual object '%s'", name);
-            return 0;
-        }
+    //     if (!manual)
+    //     {
+    //         Error("createManualObject: failed to create manual object '%s'", name);
+    //         return 0;
+    //     }
 
-        // Get the ManualObject NativeClassDef
-        NativeClassDef *manualClass = nullptr;
-        if (!vm->tryGetNativeClassDef("ManualObject", &manualClass))
-        {
-            Error("ManualObject class not found in VM");
-            return 0;
-        }
+    //     // Get the ManualObject NativeClassDef
+    //     NativeClassDef *manualClass = nullptr;
+    //     if (!vm->tryGetNativeClassDef("ManualObject", &manualClass))
+    //     {
+    //         Error("ManualObject class not found in VM");
+    //         return 0;
+    //     }
 
-        // Create NativeClassInstance
-        Value manualValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = manualValue.asNativeClassInstance();
-        instance->klass = manualClass;
-        instance->userData = (void *)manual;
+    //     // Create NativeClassInstance
+    //     Value manualValue = vm->makeNativeClassInstance(false);
+    //     NativeClassInstance *instance = manualValue.asNativeClassInstance();
+    //     instance->klass = manualClass;
+    //     instance->userData = (void *)manual;
 
-        vm->push(manualValue);
-        return 1;
-    }
+    //     vm->push(manualValue);
+    //     return 1;
+    // }
 
     // ========== MANUAL OBJECT METHODS ==========
 
@@ -227,7 +227,10 @@ namespace OgreManualObjectBindings
         if (!manual) return 0;
 
         const char *meshName = args[0].asStringChars();
-        manual->convertToMesh(meshName);
+        Ogre::MeshPtr mesh = manual->convertToMesh(meshName);
+
+        // Build edge lists for shadow support (stencil shadows)
+        mesh->buildEdgeList();
 
         vm->pushString(meshName);
         return 1;
@@ -412,7 +415,7 @@ namespace OgreManualObjectBindings
             "ManualObject",
             nullptr,  // No constructor - use createManualObject()
             nullptr,  // No destructor - Ogre owns it
-            2,        // properties: dynamic, castShadows
+            0,        // properties: dynamic, castShadows
             false
         );
 
@@ -440,9 +443,9 @@ namespace OgreManualObjectBindings
         vm.addNativeMethod(manual, "setCastShadows", manual_setCastShadows);
 
         // Global functions
-        vm.registerNative("createManualObject", createManualObject, 2);
-        vm.registerNative("createGrassQuad", createGrassQuad, 6);
-        vm.registerNative("createDecalQuad", createDecalQuad, 7);
+        // vm.registerNative("CreateManualObject", createManualObject, 2);
+        // vm.registerNative("CreateGrassQuad", createGrassQuad, 6);
+        // vm.registerNative("CreateDecalQuad", createDecalQuad, 7);
 
         Info("ManualObject bindings registered");
     }

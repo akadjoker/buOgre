@@ -28,8 +28,7 @@
 #include <OgreRTShaderSystem.h>
 #include <OgreMovablePlane.h>
 #include <OgreFrameListener.h>
-
- 
+#include <OgreOverlaySystem.h>
 
 using namespace Ogre;
 
@@ -114,7 +113,7 @@ float BACKGROUND_G = 0.0f;
 float BACKGROUND_B = 0.0f;
 
 Ogre::Root *mRoot = nullptr;
-//Ogre::SceneManager *scene = nullptr;
+Ogre::OverlaySystem *overlaySystem = nullptr;
 Ogre::RenderWindow *mWindow = nullptr;
 
 SDL_Window *sdlWindow = nullptr;
@@ -125,14 +124,17 @@ SDL_Window *sdlWindow = nullptr;
 
 void FreeResources()
 {
-    
+
+    if (overlaySystem)
+        delete overlaySystem;
+
     if (mRoot)
         delete mRoot;
     if (sdlWindow)
         SDL_DestroyWindow(sdlWindow);
     SDL_Quit();
 
- 
+    overlaySystem = nullptr;
     mRoot = nullptr;
     sdlWindow = nullptr;
 }
@@ -207,29 +209,36 @@ int native_create_engine(Interpreter *vm, int argCount, Value *args)
 
         // ==================== 3. OGRE ROOT ====================
         mRoot = new Root("plugins.cfg", "config.cfg", "ogre.log");
-        Ogre::LogManager::getSingleton().setMinLogLevel(LogMessageLevel::LML_TRIVIAL);
-
-        Info("✓ Ogre Root created");
-        Ogre::ConfigFile cf;
-        cf.load("resources.cfg");
-
-        Ogre::String name, locType;
-        Ogre::ConfigFile::SectionIterator secIt = cf.getSectionIterator();
-
-        while (secIt.hasMoreElements())
+        auto *lm = Ogre::LogManager::getSingletonPtr();
+        if (lm)
         {
-            Ogre::ConfigFile::SettingsMultiMap *settings = secIt.getNext();
-            Ogre::ConfigFile::SettingsMultiMap::iterator it;
-
-            for (it = settings->begin(); it != settings->end(); ++it)
-            {
-                locType = it->first;
-                name = it->second;
-                SDL_Log("%s  %s", name.c_str(), locType.c_str());
-
-                Ogre::ResourceGroupManager::getSingleton().addResourceLocation(name, locType);
-            }
+            lm->setMinLogLevel(Ogre::LML_CRITICAL); // só erros críticos
+            // alternativas:
+            // lm->setMinLogLevel(Ogre::LML_NORMAL);  // menos spam
+            // lm->setMinLogLevel(Ogre::LML_TRIVIAL); // tudo (o teu atual)
         }
+
+        // Info("✓ Ogre Root created");
+        // Ogre::ConfigFile cf;
+        // cf.load("resources.cfg");
+
+        // Ogre::String name, locType;
+        // Ogre::ConfigFile::SectionIterator secIt = cf.getSectionIterator();
+
+        // while (secIt.hasMoreElements())
+        // {
+        //     Ogre::ConfigFile::SettingsMultiMap *settings = secIt.getNext();
+        //     Ogre::ConfigFile::SettingsMultiMap::iterator it;
+
+        //     for (it = settings->begin(); it != settings->end(); ++it)
+        //     {
+        //         locType = it->first;
+        //         name = it->second;
+        //         SDL_Log("%s  %s", name.c_str(), locType.c_str());
+
+        //         Ogre::ResourceGroupManager::getSingleton().addResourceLocation(name, locType);
+        //     }
+        // }
 
         const RenderSystemList &renderers = mRoot->getAvailableRenderers();
         if (renderers.empty())
@@ -246,7 +255,8 @@ int native_create_engine(Interpreter *vm, int argCount, Value *args)
         Info("Using: %s", renderSystem->getName().c_str());
         mRoot->setRenderSystem(renderSystem);
         renderSystem->setConfigOption("Full Screen", FULLSCREEN ? "Yes" : "No");
-        renderSystem->setConfigOption("VSync", "Yes");
+        // renderSystem->setConfigOption("VSync", "Yes");
+        renderSystem->setConfigOption("VSync", "No");
 
         // ==================== 6. INITIALIZE ROOT ====================
         mRoot->initialise(false);
@@ -263,10 +273,11 @@ int native_create_engine(Interpreter *vm, int argCount, Value *args)
         mWindow->setVisible(true);
         Ogre::Root::getSingleton().getRenderSystem()->_initRenderTargets();
         Ogre::Root::getSingleton().clearEventTimes();
-        Info("✓ Ogre window created");
 
-        Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
-        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+        // Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
+        // Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+        overlaySystem = new Ogre::OverlaySystem();
 
         vm->pushBool(true);
     }
@@ -287,10 +298,6 @@ int native_relase_engine(Interpreter *vm, int argCount, Value *args)
     return 0;
 }
 
- 
-
-
-
 int native_engine_can_update(Interpreter *vm, int argCount, Value *args)
 {
     if (!mRoot)
@@ -299,13 +306,13 @@ int native_engine_can_update(Interpreter *vm, int argCount, Value *args)
         vm->pushBool(false);
         return 1;
     }
-    
+
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
         // Update input state for all events
         InputBindings::updateInput(event);
-        
+
         if (event.type == SDL_QUIT)
         {
             vm->pushBool(false);
@@ -325,10 +332,10 @@ int native_engine_can_update(Interpreter *vm, int argCount, Value *args)
             mWindow->windowMovedOrResized();
         }
     }
-    
+
     // Update input state tracking (previous frame state)
     InputBindings::updateInputState();
-    
+
     // Update timer (delta time, FPS, elapsed time)
     TimerBindings::updateTimer();
 
@@ -340,13 +347,13 @@ int native_engine_update(Interpreter *vm, int argCount, Value *args)
 {
     if (!mRoot)
     {
-        Error("ERROR: engine update called before engine created");
+        Error("engine update called before engine created");
         vm->pushBool(false);
         return 1;
     }
     if (argCount < 1)
     {
-        Error("ERROR: engine_update requires 1 argument (time elapsed in seconds)");
+        Error("engine_update requires 1 argument (time elapsed in seconds)");
         vm->pushBool(false);
         return 1;
     }
@@ -366,6 +373,52 @@ int native_engine_update(Interpreter *vm, int argCount, Value *args)
     return 1;
 }
 
+int native_get_stats(Interpreter *vm, int argCount, Value *args)
+{
+    auto stats = mWindow->getStatistics();
+
+    vm->pushFloat(stats.lastFPS);
+    vm->pushFloat(stats.avgFPS);
+    vm->pushFloat(stats.bestFPS);
+
+    vm->pushDouble(stats.bestFrameTime);
+    vm->pushDouble(stats.worstFrameTime);
+    vm->pushDouble(stats.triangleCount);
+    vm->pushDouble(stats.batchCount);
+
+    return 7;
+}
+
+int native_get_stats_fps(Interpreter *vm, int argCount, Value *args)
+{
+    auto stats = mWindow->getStatistics();
+
+    vm->pushFloat(stats.lastFPS);
+    vm->pushFloat(stats.avgFPS);
+    vm->pushFloat(stats.bestFPS);
+
+    return 3;
+}
+
+int native_get_stats_tris(Interpreter *vm, int argCount, Value *args)
+{
+    auto stats = mWindow->getStatistics();
+
+    vm->pushDouble(stats.triangleCount);
+    vm->pushDouble(stats.batchCount);
+
+    return 2;
+}
+
+int native_get_stats_time(Interpreter *vm, int argCount, Value *args)
+{
+    auto stats = mWindow->getStatistics();
+
+    vm->pushDouble(stats.bestFrameTime);
+    vm->pushDouble(stats.worstFrameTime);
+
+    return 2;
+}
 void writeRenderToFile(const Ogre::String &filename)
 {
     Image img(PF_A8B8G8R8, mWindow->getWidth(), mWindow->getHeight());
@@ -377,7 +430,19 @@ void writeRenderToFile(const Ogre::String &filename)
 void TakeScreenshot(const char *fileName)
 {
     mWindow->writeContentsToFile(fileName);
-    SDL_LogInfo(0, "SYSTEM: [%s] Screenshot taken successfully", fileName);
+    Info(0, "Save [%s] Screenshot ", fileName);
+}
+
+int native_save_screen(Interpreter *vm, int argCount, Value *args)
+{
+    if (argCount < 1)
+    {
+        Error("GetScreenToImage requires 1 argument (filename)");
+        vm->pushBool(false);
+        return 1;
+    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -392,9 +457,11 @@ int main(int argc, char *argv[])
     vm.registerNative("ReleaseEngine", native_relase_engine, 0);
     vm.registerNative("UpdateEngine", native_engine_update, 1);
     vm.registerNative("EngineCanUpdate", native_engine_can_update, 0);
-    
-
-    // Register Ogre3D bindings
+    vm.registerNative("GetEngineStats", native_get_stats, 0);
+    vm.registerNative("GetEngineStatsTime", native_get_stats_time, 0);
+    vm.registerNative("GetEngineStatsTris", native_get_stats_tris, 0);
+    vm.registerNative("GetEngineStatsFps", native_get_stats_fps, 0);
+    vm.registerNative("GetScreenToImage", native_save_screen, 1);
 
     OgreBindings::registerAll(vm);
 
@@ -414,7 +481,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
         return 1;
     }
-    Info("✓ SDL initialized");
+    Info("SDL initialized");
 
     const char *scriptFile = nullptr;
 
@@ -456,244 +523,6 @@ int main(int argc, char *argv[])
         SDL_Quit();
         return 1;
     }
-
-    //         // monitor
-    // try
-    // {
-
-    //         int numDisplays = SDL_GetNumVideoDisplays();
-    //         for (int i = 0; i < numDisplays; i++)
-    //         {
-    //             SDL_Rect bounds;
-    //             SDL_GetDisplayBounds(i, &bounds);
-    //             Info("Monitor %d (%s): %dx%d at (%d,%d)\n",
-    //                  i, SDL_GetDisplayName(i),
-    //                  bounds.w, bounds.h, bounds.x, bounds.y);
-    //         }
-
-    //         if (WINDOW_MONIOTR < 0 || WINDOW_MONIOTR >= numDisplays)
-    //         {
-    //             Info("Invalid monitor index %d, defaulting to 0", WINDOW_MONIOTR);
-    //             WINDOW_MONIOTR = 0;
-    //         }
-
-    //         Uint32 sdlWindowFlags = SDL_WINDOW_SHOWN;
-    //         if (CAN_RESIZE)
-    //             sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
-    //         if (FULLSCREEN)
-    //             sdlWindowFlags |= SDL_WINDOW_FULLSCREEN;
-
-    //         // Create SDL window
-    //         sdlWindow = SDL_CreateWindow(
-    //             WINDOW_TITLE.c_str(),
-    //             SDL_WINDOWPOS_CENTERED_DISPLAY(WINDOW_MONIOTR),
-    //             SDL_WINDOWPOS_CENTERED_DISPLAY(WINDOW_MONIOTR),
-    //             WINDDOW_WIDTH, WINDOW_HEIGHT,
-    //             sdlWindowFlags);
-
-    //         if (!sdlWindow)
-    //         {
-    //             Error("Failed to create SDL window: %s\n", SDL_GetError());
-    //             SDL_Quit();
-    //             return 1;
-    //         }
-    //         Info("✓ SDL window created");
-
-    //         // Get native window handle
-    //         SDL_SysWMinfo wmInfo;
-    //         SDL_VERSION(&wmInfo.version);
-    //         SDL_GetWindowWMInfo(sdlWindow, &wmInfo);
-
-    //         // ==================== 3. OGRE ROOT ====================
-    //         mRoot = new Root("plugins.cfg", "config.cfg", "ogre.log");
-    //         Ogre::LogManager::getSingleton().setMinLogLevel(LogMessageLevel::LML_TRIVIAL);
-    //         Info("✓ Ogre Root created");
-    //         Ogre::ConfigFile cf;
-    //         cf.load("resources.cfg");
-
-    //         Ogre::String name, locType;
-    //         Ogre::ConfigFile::SectionIterator secIt = cf.getSectionIterator();
-
-    //         while (secIt.hasMoreElements())
-    //         {
-    //             Ogre::ConfigFile::SettingsMultiMap *settings = secIt.getNext();
-    //             Ogre::ConfigFile::SettingsMultiMap::iterator it;
-
-    //             for (it = settings->begin(); it != settings->end(); ++it)
-    //             {
-    //                 locType = it->first;
-    //                 name = it->second;
-    //                 SDL_Log("%s  %s", name.c_str(), locType.c_str());
-
-    //                 Ogre::ResourceGroupManager::getSingleton().addResourceLocation(name, locType);
-    //             }
-    //         }
-
-    //         const RenderSystemList &renderers = mRoot->getAvailableRenderers();
-    //         if (renderers.empty())
-    //         {
-    //             Error("No render systems available!");
-    //             delete mRoot;
-    //             SDL_DestroyWindow(sdlWindow);
-    //             SDL_Quit();
-    //             return 1;
-    //         }
-
-    //         RenderSystem *renderSystem = renderers[0];
-    //         Info("Using: %s", renderSystem->getName().c_str());
-    //         mRoot->setRenderSystem(renderSystem);
-    //         renderSystem->setConfigOption("Full Screen", FULLSCREEN ? "Yes" : "No");
-    //         renderSystem->setConfigOption("VSync", "Yes");
-
-    //         // ==================== 6. INITIALIZE ROOT ====================
-    //         mRoot->initialise(false);
-    //         Info("✓ Ogre initialized");
-
-    //         // ==================== 7. CREATE OGRE WINDOW ====================
-    //         NameValuePairList params;
-    //         params["externalWindowHandle"] = StringConverter::toString((size_t)wmInfo.info.x11.window);
-    //         params["externalGLContext"] = StringConverter::toString((size_t)wmInfo.info.x11.display);
-    //         params["FSAA"] = "0";
-    //         params["vsync"] = "true";
-
-    //         mWindow = mRoot->createRenderWindow("MainWindow", WINDDOW_WIDTH, WINDOW_HEIGHT, false, &params);
-    //         mWindow->setVisible(true);
-    //         Ogre::Root::getSingleton().getRenderSystem()->_initRenderTargets();
-    //         Ogre::Root::getSingleton().clearEventTimes();
-    //         Info("✓ Ogre window created");
-
-    //         Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
-    //         Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-
-    //         scene = mRoot->createSceneManager();
-
-    //         scene->setShadowTechnique(Ogre::ShadowTechnique::SHADOWTYPE_STENCIL_ADDITIVE);
-    //         // sm->setShadowTextureCasterMaterial(MaterialManager::getSingleton().getByName("DeferredShading/Shadows/Caster", "General"));
-    //         // mSceneMgr->setShadowTextureCount(1);
-    //         //  mSceneMgr->setShadowFarDistance(150);
-    //         //  mSceneMgr->setShadowTextureConfig( 0, 512, 512, PF_FLOAT16_R, 0, 2 );
-    //         //   mSceneMgr->setShadowDirectionalLightExtrusionDistance(75);
-    //         Ogre::LogManager::getSingleton().setMinLogLevel(Ogre::LML_TRIVIAL);
-
-    //         SceneNode *root_node = scene->getRootSceneNode();
-
-    //         camera = scene->createCamera("MainCamera");
-    //         camera->setNearClipDistance(1.0f);
-    //         camera->setAutoAspectRatio(true);
-    //         SceneNode *mTarget = root_node->createChildSceneNode();
-    //         mTarget->lookAt(Vector3{0, 0, -1}, Node::TS_PARENT);
-    //         mTarget->setPosition(0, 20, 500);
-    //         mTarget->attachObject(camera);
-    //         mCamMan = new CameraMan(mTarget);
-    //         mCamMan->setStyle(CS_ORBIT);
-    //         mCamMan->setYawPitchDist(Ogre::Degree(45), Ogre::Degree(45), 200);
-
-    //         Ogre::Viewport *mViewport = mWindow->addViewport(camera);
-    //         mViewport->setBackgroundColour(Ogre::ColourValue(0.8, 0.8, 1));
-
-    //         Light *pointLight = scene->createLight("PointLight");
-    //         pointLight->setType(Ogre::Light::LT_POINT);
-    //         pointLight->setDiffuseColour(Ogre::ColourValue::White);
-    //         SceneNode *light_node = root_node->createChildSceneNode();
-    //         light_node->setPosition(0, 150, -250);
-    //         light_node->attachObject(pointLight);
-
-    //         Plane plane(Vector3::UNIT_Y, 0);
-    //         MeshManager::getSingleton().createPlane(
-    //             "ground", RGN_DEFAULT,
-    //             plane,
-    //             1500, 1500, 20, 20,
-    //             true,
-    //             1, 5, 5,
-    //             Vector3::UNIT_Z);
-    //         // Entity *groundEntity = scene->createEntity("ground");
-    //         // scene->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
-
-    //         Entity *ogreHead = scene->createEntity("ogrehead.mesh");
-    //         ogreHead->setCastShadows(true);
-    //         SceneNode *ogreHeadNode = scene->getRootSceneNode()->createChildSceneNode();
-    //         ogreHeadNode->attachObject(ogreHead);
-    //         ogreHeadNode->setPosition(84, 10, 0);
-
-    //         // ==================== 12. MAIN LOOP ====================
-    //         auto lastTime = std::chrono::high_resolution_clock::now();
-    //         bool running = true;
-
-    //         while (running)
-    //         {
-    //             SDL_Event event;
-    //             while (SDL_PollEvent(&event))
-    //             {
-    //                 if (event.type == SDL_QUIT)
-    //                 {
-    //                     running = false;
-    //                 }
-    //                 else if (event.type == SDL_KEYDOWN)
-    //                 {
-    //                     if (event.key.keysym.sym == SDLK_ESCAPE)
-    //                         running = false;
-    //                     mCamMan->onKeyDown(event.key);
-    //                 }
-    //                 else if (event.type == SDL_KEYUP)
-    //                 {
-    //                     mCamMan->onKeyUp(event.key);
-    //                 }
-    //                 else if (event.type == SDL_MOUSEMOTION)
-    //                 {
-    //                     mCamMan->onMouseMove(event.motion);
-    //                 }
-    //                 else if (event.type == SDL_MOUSEBUTTONDOWN)
-    //                 {
-    //                     mCamMan->onMouseDown(event.button);
-    //                 }
-    //                 else if (event.type == SDL_MOUSEBUTTONUP)
-    //                 {
-    //                     mCamMan->onMouseUp(event.button);
-    //                 }
-    //                 else if (event.type == SDL_MOUSEWHEEL)
-    //                 {
-    //                     mCamMan->onMouseWheel(event.wheel);
-    //                 }
-    //                 else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED)
-    //                 {
-    //                     mWindow->resize(event.window.data1, event.window.data2);
-    //                     mWindow->windowMovedOrResized();
-    //                 }
-    //             }
-
-    //             auto currentTime = std::chrono::high_resolution_clock::now();
-    //             std::chrono::duration<float> elapsed = currentTime - lastTime;
-    //             lastTime = currentTime;
-    //             mCamMan->onUpdate(elapsed.count());
-
-    //             if (!mRoot->renderOneFrame())
-    //                 break;
-    //         }
-
-    //         Info("Game loop ended");
-    //     }
-    //     catch (const Exception &e)
-    //     {
-    //         Error("Ogre Exception: %s", e.getFullDescription().c_str());
-    //         if (mCamMan)
-    //             delete mCamMan;
-    //         if (mRoot)
-    //             delete mRoot;
-    //         if (sdlWindow)
-    //             SDL_DestroyWindow(sdlWindow);
-    //         SDL_Quit();
-    //         return 1;
-    //     }
-
-    //     if (mCamMan)
-    //         delete mCamMan;
-
-    //     // Cleanup
-    //     if (mRoot)
-    //         delete mRoot;
-    //     if (sdlWindow)
-    //         SDL_DestroyWindow(sdlWindow);
-    //     SDL_Quit();
 
     Info("Engine shutdown complete");
     return 0;

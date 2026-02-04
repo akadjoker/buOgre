@@ -11,7 +11,7 @@ namespace OgreMaterialBindings
     // createMaterial(name, groupName) - função global
     int createMaterial(Interpreter *vm, int argCount, Value *args)
     {
-        if (argCount < 1)
+        if (argCount < 2)
         {
             Error("createMaterial: requires material name");
             return 0;
@@ -373,10 +373,10 @@ namespace OgreMaterialBindings
         vm.addNativeMethod(material, "clone", material_clone);
 
         // Global functions
-        vm.registerNative("createMaterial", createMaterial, 2);
-        vm.registerNative("getMaterial", getMaterial, 1);
+        vm.registerNative("CreateMaterial", createMaterial, 2);
+        vm.registerNative("GetMaterial", getMaterial, 1);
 
-        Info("Material bindings registered");
+        //Info("Material bindings registered");
     }
 
 } // namespace OgreMaterialBindings

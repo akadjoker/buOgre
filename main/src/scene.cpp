@@ -1,6 +1,8 @@
 #include "bindings.hpp"
+#include <OgreOverlaySystem.h>
 
 extern Ogre::Root *mRoot;
+extern Ogre::OverlaySystem *overlaySystem;
 
 namespace OgreSceneBindings
 {
@@ -12,7 +14,11 @@ namespace OgreSceneBindings
             Error("Scene: engine not created yet (call CreateEngine first)");
             return nullptr;
         }
-        return mRoot->createSceneManager();
+        Ogre::SceneManager *scene = mRoot->createSceneManager();
+
+        scene->addRenderQueueListener(overlaySystem);
+
+        return scene;
     }
 
     void scene_dtor(Interpreter *vm, void *data) {}
@@ -198,6 +204,144 @@ namespace OgreSceneBindings
         }
 
         sm->setShadowTechnique(tech);
+
+        return 0;
+    }
+
+    int scene_setShadowTextureSize(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+
+        int size = (int)args[0].asNumber();
+
+        sm->setShadowTextureSize(size);
+
+        return 0;
+    }
+
+    int scene_setShadowTextureCount(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+
+        int count = (int)args[0].asNumber();
+
+        sm->setShadowTextureCount(count);
+
+        return 0;
+    }
+    // setShadowFarDistance(distance)
+    int scene_setShadowFarDistance(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 1)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+        float distance = (float)args[0].asNumber();
+        sm->setShadowFarDistance(distance);
+        return 0;
+    }
+
+    // setShadowDirLightTextureOffset(offset)
+    int scene_setShadowDirLightTextureOffset(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 1)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+        float offset = (float)args[0].asNumber();
+        sm->setShadowDirLightTextureOffset(offset);
+        return 0;
+    }
+
+    // setShadowTextureSelfShadow(enabled)
+    int scene_setShadowTextureSelfShadow(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 1)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+        bool enabled = args[0].asBool();
+        sm->setShadowTextureSelfShadow(enabled);
+        return 0;
+    }
+
+    // setShadowCasterRenderBackFaces(enabled)
+    int scene_setShadowCasterRenderBackFaces(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 1)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+        bool enabled = args[0].asBool();
+        sm->setShadowCasterRenderBackFaces(enabled);
+        return 0;
+    }
+
+    // setShadowColour(r, g, b)
+    int scene_setShadowColour(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 3)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+        float r = (float)args[0].asNumber();
+        float g = (float)args[1].asNumber();
+        float b = (float)args[2].asNumber();
+        sm->setShadowColour(Ogre::ColourValue(r, g, b));
+        return 0;
+    }
+
+    // setShadowTexturePixelFormat(format)
+    // format: 0=PF_X8R8G8B8, 1=PF_FLOAT16_R, 2=PF_FLOAT32_R
+    int scene_setShadowTexturePixelFormat(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 1)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+
+        int format = (int)args[0].asNumber();
+        Ogre::PixelFormat pf = Ogre::PF_X8R8G8B8;
+
+        switch (format)
+        {
+        case 1:
+            pf = Ogre::PF_FLOAT16_R;
+            break;
+        case 2:
+            pf = Ogre::PF_FLOAT32_R;
+            break;
+        default:
+            pf = Ogre::PF_X8R8G8B8;
+            break;
+        }
+
+        sm->setShadowTexturePixelFormat(pf);
+        return 0;
+    }
+
+    // setShadowTextureCountPerLightType(lightType, count)
+    // lightType: 0=point, 1=directional, 2=spotlight
+    int scene_setShadowTextureCountPerLightType(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 2)
+            return 0;
+        Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+
+        int lightType = (int)args[0].asNumber();
+        size_t count = (size_t)args[1].asNumber();
+
+        Ogre::Light::LightTypes lt = Ogre::Light::LT_POINT;
+        switch (lightType)
+        {
+        case 1:
+            lt = Ogre::Light::LT_DIRECTIONAL;
+            break;
+        case 2:
+            lt = Ogre::Light::LT_SPOTLIGHT;
+            break;
+        default:
+            lt = Ogre::Light::LT_POINT;
+            break;
+        }
+
+        sm->setShadowTextureCountPerLightType(lt, count);
         return 0;
     }
 
@@ -215,7 +359,6 @@ namespace OgreSceneBindings
 
         bool enabled = args[0].asBool();
 
-
         const char *materialName = "Examples/SpaceSkyBox";
         float distance = 5000.0f;
         bool drawFirst = true;
@@ -228,7 +371,6 @@ namespace OgreSceneBindings
         try
         {
             scene->setSkyBox(enabled, materialName, distance, drawFirst);
-            Info("Skybox enabled: %s (distance=%.1f)", materialName, distance);
         }
         catch (Ogre::Exception &e)
         {
@@ -444,54 +586,748 @@ namespace OgreSceneBindings
         return 0;
     }
 
-
-// disableFog(scene)
-int scene_disableFog(Interpreter *vm, void *data, int argCount, Value *args)
-{
-    if (argCount < 1)
+    // disableFog(scene)
+    int scene_disableFog(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        Error("disableFog: requires scene");
+        if (argCount < 1)
+        {
+            Error("disableFog: requires scene");
+            return 0;
+        }
+
+        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
+
+        if (scene)
+        {
+            scene->setFog(Ogre::FOG_NONE);
+            Info("Fog disabled");
+        }
+
         return 0;
     }
 
-    NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-    Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
-
-    if (scene)
+    int native_create_scene(Interpreter *vm, int argCount, Value *args)
     {
-        scene->setFog(Ogre::FOG_NONE);
-        Info("Fog disabled");
+
+        NativeClassDef *sceneNodeClass = nullptr;
+        if (!vm->tryGetNativeClassDef("Scene", &sceneNodeClass))
+        {
+            Error("Scene class not found in VM");
+            return 0;
+        }
+        Ogre::SceneManager *scene = mRoot->createSceneManager();
+
+        // // ========== CONFIGURAÇÃO SIMPLES DE TEXTURE SHADOWS ==========
+        // // Usar TEXTURE_MODULATIVE (não INTEGRATED) - mais simples
+        // scene->setShadowTechnique(Ogre::SHADOWTYPE_TEXTURE_MODULATIVE);
+
+        // // Formato normal RGB (não depth)
+        // scene->setShadowTexturePixelFormat(Ogre::PF_X8R8G8B8);
+
+        // // Configurações básicas
+        // scene->setShadowColour(Ogre::ColourValue(0.5, 0.5, 0.5));
+        // scene->setShadowTextureSize(2048);     // Maior para melhor qualidade
+        // scene->setShadowTextureCount(3);       // 3 texturas para CSM
+        // scene->setShadowDirLightTextureOffset(0.6);  // Anti shadow-acne
+        // scene->setShadowFarDistance(300.0);    // Distância maior
+        // scene->setShadowTextureSelfShadow(true);
+        // scene->setShadowCasterRenderBackFaces(false);
+
+        // // SEM LiSPSM - usar default (mais simples e funcional)
+        // // scene->setShadowCameraSetup(Ogre::DefaultShadowCameraSetup::create());
+
+        // // LUZ DIRECIONAL (não point) - funciona melhor para texture shadows
+        // Ogre::Light* light = scene->createLight(Ogre::Light::LT_DIRECTIONAL);
+        // light->setDiffuseColour(1.0f, 0.95f, 0.9f);
+        // light->setSpecularColour(Ogre::ColourValue::White);
+
+        // Ogre::SceneNode* lightNode = scene->getRootSceneNode()->createChildSceneNode();
+        // lightNode->attachObject(light);
+        // lightNode->setDirection(0.3f, -0.75f, 0.5f);  // Aponta para baixo
+
+
+        scene->addRenderQueueListener(overlaySystem);
+        Value nodeValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *instance = nodeValue.asNativeClassInstance();
+        instance->klass = sceneNodeClass;
+        instance->userData = (void *)scene;
+        vm->push(nodeValue);
+        return 1;
     }
 
-    return 0;
-}
+    int scene_createCube(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 3)
+        {
+            Error("createCube: requires name, size, material [group]");
+            vm->pushNil();
+            return 1;
+        }
 
-void registerAll(Interpreter &vm)
-{
-    NativeClassDef *sc = vm.registerNativeClass(
-        "Scene",
-        scene_ctor,
-        scene_dtor,
-        0,
-        false);
+        try
+        {
+            Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float size = (float)args[1].asNumber();
+            const char *material = args[2].asStringChars();
 
-    vm.addNativeMethod(sc, "getRoot", scene_getRoot);
-    vm.addNativeMethod(sc, "createEntity", scene_createEntity);
-    vm.addNativeMethod(sc, "createLight", scene_createLight);
-    vm.addNativeMethod(sc, "createCamera", scene_createCamera);
+            const char *group = NULL;
+            if (argCount >= 4)
+            {
+                group = args[3].asStringChars();
+            }
 
-    vm.addNativeMethod(sc, "setAmbientLight", scene_setAmbientLight);
-    vm.addNativeMethod(sc, "setShadowTechnique", scene_setShadowTechnique);
+            Ogre::ManualObject *manual = scene->createManualObject(name);
+            if (!manual)
+            {
+                Error("createCube: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
 
-    vm.addNativeMethod(sc, "setSkyBox", scene_setSkyBox);
-    vm.addNativeMethod(sc, "setSkyDome", scene_setSkyDome);
-    vm.addNativeMethod(sc, "setSkyPlane", scene_setSkyPlane);
-    vm.addNativeMethod(sc, "setSkyPlaneCustom", scene_setSkyPlaneCustom);
+            ProceduralMesh::createCube(manual, material, size, group);
 
-    vm.addNativeMethod(sc, "setFog", scene_setFog);
-    vm.addNativeMethod(sc, "disableFog", scene_disableFog);
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
 
-    Info("Scene bindings registered");
-}
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createCube exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createSphere(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5)
+        {
+            Error("createSphere: requires name, radius, rings, segments, material [group]");
+            vm->pushNil();
+            return 1;
+        }
+
+        try
+        {
+            Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float radius = (float)args[1].asNumber();
+            int rings = (int)args[2].asNumber();
+            int segments = (int)args[3].asNumber();
+            const char *material = args[4].asStringChars();
+
+            const char *group = NULL;
+            if (argCount >= 6)
+            {
+                group = args[5].asStringChars();
+            }
+
+            Ogre::ManualObject *manual = scene->createManualObject(name);
+            if (!manual)
+            {
+                Error("createSphere: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createSphere(manual, material, radius, rings, segments, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createSphere exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    // ========== CREATE CYLINDER ==========
+
+    int scene_createCylinder(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5)
+        {
+            Error("createCylinder: requires name, radius, height, segments, material [group]");
+            vm->pushNil();
+            return 1;
+        }
+
+        try
+        {
+            Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float radius = (float)args[1].asNumber();
+            float height = (float)args[2].asNumber();
+            int segments = (int)args[3].asNumber();
+            const char *material = args[4].asStringChars();
+
+            const char *group = NULL;
+            if (argCount >= 6)
+            {
+                group = args[5].asStringChars();
+            }
+
+            Ogre::ManualObject *manual = scene->createManualObject(name);
+            if (!manual)
+            {
+                Error("createCylinder: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createCylinder(manual, material, radius, height, segments, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createCylinder exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createCone(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5)
+        {
+            Error("createCone: requires name, radius, height, segments, material [group]");
+            vm->pushNil();
+            return 1;
+        }
+
+        try
+        {
+            Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float radius = (float)args[1].asNumber();
+            float height = (float)args[2].asNumber();
+            int segments = (int)args[3].asNumber();
+            const char *material = args[4].asStringChars();
+
+            const char *group = NULL;
+            if (argCount >= 6)
+            {
+                group = args[5].asStringChars();
+            }
+
+            Ogre::ManualObject *manual = scene->createManualObject(name);
+            if (!manual)
+            {
+                Error("createCone: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createCone(manual, material, radius, height, segments, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createCone exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createTorus(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 6)
+        {
+            Error("createTorus: requires name, majorRadius, minorRadius, majorSegments, minorSegments, material [group]");
+            vm->pushNil();
+            return 1;
+        }
+
+        try
+        {
+            Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float majorRadius = (float)args[1].asNumber();
+            float minorRadius = (float)args[2].asNumber();
+            int majorSegments = (int)args[3].asNumber();
+            int minorSegments = (int)args[4].asNumber();
+            const char *material = args[5].asStringChars();
+
+            const char *group = NULL;
+            if (argCount >= 7)
+            {
+                group = args[6].asStringChars();
+            }
+
+            Ogre::ManualObject *manual = scene->createManualObject(name);
+            if (!manual)
+            {
+                Error("createTorus: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createTorus(manual, material, majorRadius, minorRadius, majorSegments, minorSegments, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createTorus exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createQuad(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 4)
+        {
+            Error("createQuad: requires name, width, height, material [group]");
+            return 0;
+        }
+
+        try
+        {
+            Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float width = (float)args[1].asNumber();
+            float height = (float)args[2].asNumber();
+            const char *material = args[3].asStringChars();
+            const char *group = nullptr;
+            if (argCount >= 5)
+                group = args[4].asStringChars();
+
+            Ogre::ManualObject *manual = sm->createManualObject(Ogre::String(name) + "_manual");
+            if (!manual)
+            {
+                Error("createQuad: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createQuad(manual, material, width, height, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createQuad exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createPlane(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5)
+        {
+            Error("createPlane: requires name, width, depth, widthSegments, depthSegments, material [group]");
+            return 0;
+        }
+
+        try
+        {
+            Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float width = (float)args[1].asNumber();
+            float depth = (float)args[2].asNumber();
+            int widthSegments = (int)args[3].asNumber();
+            int depthSegments = (int)args[4].asNumber();
+            const char *material = argCount >= 6 ? args[5].asStringChars() : "BaseWhiteNoLighting";
+            const char *group = nullptr;
+            if (argCount >= 7)
+                group = args[6].asStringChars();
+
+            Ogre::ManualObject *manual = sm->createManualObject(Ogre::String(name) + "_manual");
+            if (!manual)
+            {
+                Error("createPlane: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createPlane(manual, material, width, depth, widthSegments, depthSegments, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createPlane exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    int scene_createCapsule(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5)
+        {
+            Error("createCapsule: requires name, radius, height, segments, rings, material [group]");
+            return 0;
+        }
+
+        try
+        {
+            Ogre::SceneManager *sm = static_cast<Ogre::SceneManager *>(data);
+            const char *name = args[0].asStringChars();
+            float radius = (float)args[1].asNumber();
+            float height = (float)args[2].asNumber();
+            int segments = (int)args[3].asNumber();
+            int rings = (int)args[4].asNumber();
+            const char *material = argCount >= 6 ? args[5].asStringChars() : "BaseWhiteNoLighting";
+            const char *group = nullptr;
+            if (argCount >= 7)
+                group = args[6].asStringChars();
+
+            Ogre::ManualObject *manual = sm->createManualObject(Ogre::String(name) + "_manual");
+            if (!manual)
+            {
+                Error("createCapsule: failed to create manual object '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            ProceduralMesh::createCapsule(manual, material, radius, height, segments, rings, group);
+
+            NativeClassDef *objClass = nullptr;
+            if (!vm->tryGetNativeClassDef("ManualObject", &objClass))
+            {
+                Error("ManualObject class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value objValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = objValue.asNativeClassInstance();
+            instance->klass = objClass;
+            instance->userData = (void *)manual;
+
+            vm->push(objValue);
+        }
+        catch (const std::exception &e)
+        {
+            Error("createCapsule exception: %s", e.what());
+            vm->pushNil();
+        }
+
+        return 1;
+    }
+
+    // createParticleSystem(scene, "name", "templateName") - função global
+    int createParticleSystem(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+
+        if (!scene)
+        {
+            Error("createParticleSystem: invalid scene");
+            return 0;
+        }
+        if (argCount < 2)
+        {
+            Error("createParticleSystem: requires name and templateName");
+            return 0;
+        }
+
+        if (!args[0].isString() || !args[1].isString())
+        {
+            Error("createParticleSystem: name and templateName must be strings");
+            return 0;
+        }
+
+        const char *name = args[0].asStringChars();
+        const char *templateName = args[1].asStringChars();
+
+        Ogre::ParticleSystem *particleSystem = scene->createParticleSystem(name, templateName);
+
+        if (!particleSystem)
+        {
+            Error("createParticleSystem: failed to create particle system '%s' with template '%s'", name, templateName);
+            return 0;
+        }
+
+        // Get the ParticleSystem NativeClassDef
+        NativeClassDef *particleClass = nullptr;
+        if (!vm->tryGetNativeClassDef("ParticleSystem", &particleClass))
+        {
+            Error("ParticleSystem class not found in VM");
+            return 0;
+        }
+
+        // Create NativeClassInstance
+        Value particleValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *instance = particleValue.asNativeClassInstance();
+        instance->klass = particleClass;
+        instance->userData = (void *)particleSystem;
+
+        vm->push(particleValue);
+        return 1;
+    }
+
+    // createRibbonTrail(scene, "name") - função global
+    int createRibbonTrail(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+
+        if (!scene)
+        {
+            Error("createRibbonTrail: invalid scene");
+            return 0;
+        }
+        if (argCount < 1)
+        {
+            Error("createRibbonTrail: requires name");
+            return 0;
+        }
+
+        if (!args[0].isString())
+        {
+            Error("createRibbonTrail: name must be a string");
+            return 0;
+        }
+
+        const char *name = args[0].asStringChars();
+
+        Ogre::RibbonTrail *ribbonTrail = scene->createRibbonTrail(name);
+
+        if (!ribbonTrail)
+        {
+            Error("createRibbonTrail: failed to create ribbon trail '%s'", name);
+            return 0;
+        }
+
+        // Get the RibbonTrail NativeClassDef
+        NativeClassDef *ribbonClass = nullptr;
+        if (!vm->tryGetNativeClassDef("RibbonTrail", &ribbonClass))
+        {
+            Error("RibbonTrail class not found in VM");
+            return 0;
+        }
+
+        // Create NativeClassInstance
+        Value ribbonValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *instance = ribbonValue.asNativeClassInstance();
+        instance->klass = ribbonClass;
+        instance->userData = (void *)ribbonTrail;
+
+        vm->push(ribbonValue);
+        return 1;
+    }
+
+    // createBillboardSet(scene, name, poolSize) - global function
+    int createBillboardSet(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+
+        if (!scene)
+        {
+            Error("createBillboardSet: invalid scene");
+            vm->pushNil();
+            return 1;
+        }
+        if (argCount < 2)
+        {
+            Error("createBillboardSet: requires name and poolSize");
+            vm->pushNil();
+            return 1;
+        }
+
+        if (!args[0].isString() || !args[1].isNumber())
+        {
+            Error("createBillboardSet: name must be a string and poolSize must be a number");
+            vm->pushNil();
+            return 1;
+        }
+
+        const char *name = args[0].asStringChars();
+        unsigned int poolSize = (unsigned int)args[1].asNumber();
+        try
+        {
+            Ogre::BillboardSet *billboardSet = scene->createBillboardSet(name, poolSize);
+
+            if (!billboardSet)
+            {
+                Error("createBillboardSet: failed to create billboard set '%s'", name);
+                vm->pushNil();
+                return 1;
+            }
+
+            // Get the BillboardSet NativeClassDef
+            NativeClassDef *bbSetClass = nullptr;
+            if (!vm->tryGetNativeClassDef("BillboardSet", &bbSetClass))
+            {
+                Error("BillboardSet class not found in VM");
+                vm->pushNil();
+                return 1;
+            }
+
+            Value bbSetValue = vm->makeNativeClassInstance(false);
+            NativeClassInstance *instance = bbSetValue.asNativeClassInstance();
+            instance->klass = bbSetClass;
+            instance->userData = (void *)billboardSet;
+
+            vm->push(bbSetValue);
+
+            return 1;
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("createBillboardSet failed: %s", e.what());
+            vm->pushNil();
+            return 1;
+        }
+    }
+
+    void registerAll(Interpreter &vm)
+    {
+        NativeClassDef *sc = vm.registerNativeClass(
+            "Scene",
+            scene_ctor,
+            scene_dtor,
+            0,
+            false);
+
+        vm.addNativeMethod(sc, "getRoot", scene_getRoot);
+        vm.addNativeMethod(sc, "createEntity", scene_createEntity);
+        vm.addNativeMethod(sc, "createLight", scene_createLight);
+        vm.addNativeMethod(sc, "createCamera", scene_createCamera);
+
+        vm.addNativeMethod(sc, "createCube", scene_createCube);
+        vm.addNativeMethod(sc, "createSphere", scene_createSphere);
+        vm.addNativeMethod(sc, "createCylinder", scene_createCylinder);
+        vm.addNativeMethod(sc, "createCone", scene_createCone);
+        vm.addNativeMethod(sc, "createTorus", scene_createTorus);
+        vm.addNativeMethod(sc, "createQuad", scene_createQuad);
+        vm.addNativeMethod(sc, "createPlane", scene_createPlane);
+        vm.addNativeMethod(sc, "createCapsule", scene_createCapsule);
+        vm.addNativeMethod(sc, "createRibbonTrail", createRibbonTrail);
+        vm.addNativeMethod(sc, "createParticleSystem", createParticleSystem);
+        vm.addNativeMethod(sc, "createBillboardSet", createBillboardSet);
+
+        vm.addNativeMethod(sc, "setAmbientLight", scene_setAmbientLight);
+        vm.addNativeMethod(sc, "setShadowTechnique", scene_setShadowTechnique);
+        vm.addNativeMethod(sc, "setShadowTextureSize", scene_setShadowTextureSize);
+        vm.addNativeMethod(sc, "setShadowTextureCount", scene_setShadowTextureCount);
+
+        vm.addNativeMethod(sc, "setShadowFarDistance", scene_setShadowFarDistance);
+        vm.addNativeMethod(sc, "setShadowDirLightTextureOffset", scene_setShadowDirLightTextureOffset);
+        vm.addNativeMethod(sc, "setShadowTextureSelfShadow", scene_setShadowTextureSelfShadow);
+        vm.addNativeMethod(sc, "setShadowCasterRenderBackFaces", scene_setShadowCasterRenderBackFaces);
+        vm.addNativeMethod(sc, "setShadowColour", scene_setShadowColour);
+        vm.addNativeMethod(sc, "setShadowTexturePixelFormat", scene_setShadowTexturePixelFormat);
+        vm.addNativeMethod(sc, "setShadowTextureCountPerLightType", scene_setShadowTextureCountPerLightType);
+
+        vm.addNativeMethod(sc, "setSkyBox", scene_setSkyBox);
+        vm.addNativeMethod(sc, "setSkyDome", scene_setSkyDome);
+        vm.addNativeMethod(sc, "setSkyPlane", scene_setSkyPlane);
+        vm.addNativeMethod(sc, "setSkyPlaneCustom", scene_setSkyPlaneCustom);
+
+        vm.addNativeMethod(sc, "setFog", scene_setFog);
+        vm.addNativeMethod(sc, "disableFog", scene_disableFog);
+
+        vm.registerNative("CreateScene", native_create_scene, 0);
+
+        //  Info("Scene bindings registered");
+    }
 
 } // namespace OgreSceneBindings

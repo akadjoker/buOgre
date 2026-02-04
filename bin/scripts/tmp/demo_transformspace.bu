@@ -1,0 +1,186 @@
+// ============================================================
+// TRANSFORMSPACE DEMONSTRATION
+// Shows the difference between TS_LOCAL, TS_PARENT, and TS_WORLD
+// ============================================================
+
+import "constants.bu";
+
+// Initialize engine
+CreateEngine(1280, 720, "TransformSpace Demo", 0, false, true);
+
+var scene = CreateScene("MainScene");
+var root = scene.getRootNode();
+
+// Setup camera
+var cameraNode = root.createChild();
+cameraNode.setPosition(0, 10, 30);
+cameraNode.lookAt(0, 0, 0, TS_WORLD);
+
+var camera = CreateCamera(scene, "MainCamera");
+camera.setNearClipDistance(0.5);
+camera.setAutoAspectRatio(true);
+cameraNode.attachObject(camera);
+
+var vp = Viewport(camera);
+vp.setBackgroundColor(0.1, 0.1, 0.15);
+
+// Create ambient light
+var ambientLight = scene.setAmbientLight(0.3, 0.3, 0.3);
+
+// Create directional light
+var light = CreateLight(scene, "MainLight");
+light.setType(0); // Directional
+light.setDirection(1, -1, -1);
+light.setDiffuse(0.8, 0.8, 0.7);
+SetCastShadows(scene, true);
+
+// ========== DEMO 1: TS_LOCAL Movement ==========
+// Cube that moves forward in its own local space
+var localCube = createCube(scene, "LocalCube", 2.0);
+var localNode = root.createChild();
+localNode.setPosition(-10, 0, 0);
+localNode.attachObject(localCube);
+
+// Material for local cube (red)
+var localMat = createMaterial("LocalMat");
+localMat.setDiffuse(1.0, 0.2, 0.2, 1.0);
+localMat.setSpecular(0.8, 0.8, 0.8, 32.0);
+localCube.setMaterialName("LocalMat");
+
+// ========== DEMO 2: TS_PARENT Movement ==========
+// Create parent-child hierarchy
+var parentNode = root.createChild();
+parentNode.setPosition(0, 0, 0);
+
+var parentCube = createCube(scene, "ParentCube", 1.5);
+parentNode.attachObject(parentCube);
+
+var parentMat = createMaterial("ParentMat");
+parentMat.setDiffuse(0.2, 1.0, 0.2, 1.0);
+parentMat.setSpecular(0.8, 0.8, 0.8, 32.0);
+parentCube.setMaterialName("ParentMat");
+
+// Child that moves in parent space
+var childNode = parentNode.createChild();
+childNode.setPosition(0, 3, 0);
+
+var childCube = createCube(scene, "ChildCube", 0.8);
+childNode.attachObject(childCube);
+
+var childMat = createMaterial("ChildMat");
+childMat.setDiffuse(0.2, 0.2, 1.0, 1.0);
+childMat.setSpecular(0.8, 0.8, 0.8, 32.0);
+childCube.setMaterialName("ChildMat");
+
+// ========== DEMO 3: TS_WORLD Movement ==========
+// Cube that always moves in world space
+var worldCube = createCube(scene, "WorldCube", 2.0);
+var worldNode = root.createChild();
+worldNode.setPosition(10, 0, 0);
+worldNode.attachObject(worldCube);
+
+var worldMat = createMaterial("WorldMat");
+worldMat.setDiffuse(1.0, 1.0, 0.2, 1.0);
+worldMat.setSpecular(0.8, 0.8, 0.8, 32.0);
+worldCube.setMaterialName("WorldMat");
+
+// Create ground plane for reference
+var plane = CreatePlane(scene, "GroundPlane", 1000, 1000, 10, 10);
+var planeNode = root.createChild();
+planeNode.setPosition(0, -2, 0);
+planeNode.attachObject(plane);
+
+var planeMat = createMaterial("PlaneMat");
+planeMat.setDiffuse(0.3, 0.3, 0.3, 1.0);
+plane.setMaterialName("PlaneMat");
+
+// Create text overlays
+var overlay = createOverlay("HelpOverlay");
+overlay.show();
+
+var panel = createPanel("HelpPanel", overlay);
+panel.setMetricsMode(0); // Pixels
+panel.setPosition(10, 10);
+panel.setDimensions(600, 350);
+panel.setMaterialName("Core/StatsBlockCenter");
+
+var text = createTextArea("HelpText", panel);
+text.setMetricsMode(0);
+text.setPosition(15, 15);
+text.setDimensions(570, 320);
+text.setCharHeight(16);
+text.setColour(1.0, 1.0, 1.0);
+
+var helpText = "TRANSFORMSPACE DEMONSTRATION\n\n";
+helpText = helpText + "RED CUBE (Left): TS_LOCAL Movement\n";
+helpText = helpText + "  - Moves in its own orientation\n";
+helpText = helpText + "  - Rotates and moves forward in local space\n\n";
+helpText = helpText + "GREEN+BLUE (Center): TS_PARENT Movement\n";
+helpText = helpText + "  - Blue cube moves relative to green parent\n";
+helpText = helpText + "  - Parent rotates, child moves in parent space\n\n";
+helpText = helpText + "YELLOW CUBE (Right): TS_WORLD Movement\n";
+helpText = helpText + "  - Always moves along world X axis\n";
+helpText = helpText + "  - Even when rotated, moves in world space\n\n";
+helpText = helpText + "Press ESC to exit";
+
+text.setCaption(helpText);
+
+// Animation variables
+var time = 0.0;
+var moveSpeed = 2.0;
+var rotSpeed = 30.0;
+
+Info("TransformSpace demo started");
+Info("RED: TS_LOCAL | GREEN/BLUE: TS_PARENT | YELLOW: TS_WORLD");
+
+while (EngineCanUpdate())
+{
+    var deltaTime = getDeltaTime();
+    time = time + deltaTime;
+
+    // Update input
+    updateInput();
+
+    // Exit on ESC
+    if (isKeyPressed(41)) // ESC
+    {
+        break;
+    }
+
+    // ========== LOCAL SPACE DEMO ==========
+    // Red cube rotates around Y axis and moves forward in its local space
+    localNode.yaw(rotSpeed * deltaTime, TS_LOCAL);
+    localNode.move(moveSpeed, deltaTime, TS_LOCAL);  // NEW: Using optional TransformSpace parameter!
+
+    // Reset position if it goes too far
+    var localPos = localNode.position;
+    if (localPos.x * localPos.x + localPos.z * localPos.z > 400)
+    {
+        localNode.setPosition(-10, 0, 0);
+    }
+
+    // ========== PARENT SPACE DEMO ==========
+    // Parent rotates
+    parentNode.yaw(rotSpeed * deltaTime, TS_LOCAL);
+
+    // Child moves back and forth in parent space (along parent's local X axis)
+    var childOffset = Math.sin(time * 2.0) * 3.0;
+    childNode.setPosition(childOffset, 3, 0);
+
+    // ========== WORLD SPACE DEMO ==========
+    // Yellow cube rotates locally but moves in world space
+    worldNode.yaw(rotSpeed * deltaTime, TS_LOCAL);
+
+    // Move along world X axis (left-right) regardless of rotation
+    // Using translate with TS_WORLD
+    var worldMoveDir = Math.sin(time * 1.5) * moveSpeed * deltaTime;
+    worldNode.translate(worldMoveDir, 0, 0, TS_WORLD);
+
+    // Camera slight rotation for better view
+    cameraNode.yaw(5.0 * deltaTime, TS_WORLD);
+
+    UpdateEngine(deltaTime);
+}
+
+ReleaseEngine();
+Info("Demo ended");

@@ -1,0 +1,139 @@
+// ============================================================
+// TUTORIAL 3 - ANIMAÇÃO
+// Aprenda: Animações, Skeleton, Camera Controllers
+// ============================================================
+
+include "keys.bu";
+
+def main()
+{
+    print("=== TUTORIAL 3 - ANIMAÇÃO ===");
+    print("Tutorial de animação básica com objetos procedurais");
+    print("(Sinbad será usado em tutoriais avançados)");
+
+    CreateEngine(1280, 720, "Tutorial - Animation", 1, false, true);
+
+    addResourceLocation("./media", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Luz
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Chão
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== ANIMAÇÃO DE TRANSFORMAÇÃO ==========
+
+    print("Criando objetos animados...");
+
+    // Cubo que roda
+    var cube1Mesh = createCube(scene, "RotatingCube", 2.0);
+    var cube1 = scene.createEntity(cube1Mesh);
+    var cube1Node = rootNode.createChild();
+    cube1Node.attachObject(cube1);
+    cube1Node.setPosition(-5, 3, 0);
+
+    // Esfera que sobe e desce
+    var sphereMesh = createSphere(scene, "BouncingSphere", 1.5, 24, 24);
+    var sphere = scene.createEntity(sphereMesh);
+    var sphereNode = rootNode.createChild();
+    sphereNode.attachObject(sphere);
+    sphereNode.setPosition(0, 1.5, 0);
+
+    // Cilindro que orbita
+    var cylMesh = createCylinder(scene, "OrbitingCyl", 1.0, 3.0, 16);
+    var cyl = scene.createEntity(cylMesh);
+    var cylNode = rootNode.createChild();
+    cylNode.attachObject(cyl);
+
+    // ========== THIRD PERSON CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+
+    // Third person controller focado na esfera
+    var tpController = ThirdPersonController(cameraNode, sphereNode);
+    tpController.distance = 15.0;
+    tpController.springStiffness = 12.0;
+    tpController.springDamping = 0.85;
+    tpController.setOffset(0, 3, 0);
+    tpController.setDistanceLimits(5.0, 30.0);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.3, 0.4, 0.5);
+
+    // FPS counter
+    createFPSOverlay();
+
+    var time = 0.0;
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+
+    print("Animações rodando!");
+    print("Use mouse scroll para zoom");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        time = time + deltaTime;
+
+        // FPS
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+        if (fpsTimer >= 1.0)
+        {
+            updateFPSText(frameCount);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // ========== ANIMAÇÕES ==========
+
+        // Cubo: rotação contínua
+        cube1Node.yaw(50.0 * deltaTime);
+        cube1Node.pitch(30.0 * deltaTime);
+
+        // Esfera: bounce (seno)
+        var bounceHeight = 1.5 + abs(sin(time * 3.0)) * 4.0;
+        sphereNode.setPosition(0, bounceHeight, 0);
+
+        // Cilindro: órbita ao redor da esfera
+        var orbitAngle = time * 0.8;
+        var orbitRadius = 6.0;
+        cylNode.setPosition(
+            cos(orbitAngle) * orbitRadius,
+            3.0,
+            sin(orbitAngle) * orbitRadius
+        );
+        cylNode.yaw(100.0 * deltaTime);
+
+        // ========== CAMERA ==========
+
+        var wheelMove = getMouseWheelMove();
+        if (wheelMove != 0)
+        {
+            tpController.distance = tpController.distance - wheelMove * 2.0;
+        }
+
+        tpController.update(deltaTime, 0, 0);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+ 

@@ -1,0 +1,255 @@
+// ============================================================
+// DEMONSTRAÇÃO DE MOVIMENTO COMPLETO
+// Move, Strafe e Climb com controle FPS
+// ============================================================
+
+import "constants.bu";
+import "keys.bu";
+
+// Initialize engine
+CreateEngine(1280, 720, "Movement Demo - FPS Controls", 0, false, true);
+
+var scene = CreateScene("MainScene");
+var root = scene.getRootNode();
+
+// Setup camera (first person)
+var cameraNode = root.createChild();
+cameraNode.setPosition(0, 2, 10);
+
+var camera = CreateCamera(scene, "MainCamera");
+camera.setNearClipDistance(0.5);
+camera.setAutoAspectRatio(true);
+cameraNode.attachObject(camera);
+
+var vp = Viewport(camera);
+vp.setBackgroundColor(0.2, 0.3, 0.4);
+
+// Lighting
+scene.setAmbientLight(0.4, 0.4, 0.4);
+
+var light = CreateLight(scene, "MainLight");
+light.setType(0); // Directional
+light.setDirection(1, -1, -1);
+light.setDiffuse(0.9, 0.9, 0.8);
+SetCastShadows(scene, true);
+
+// ========== CREATE TEST ENVIRONMENT ==========
+
+// Ground plane
+var ground = CreatePlane(scene, "Ground", 100, 100, 10, 10);
+var groundNode = root.createChild();
+groundNode.setPosition(0, 0, 0);
+groundNode.attachObject(ground);
+
+var groundMat = createMaterial("GroundMat");
+groundMat.setDiffuse(0.3, 0.5, 0.3, 1.0);
+groundMat.setSpecular(0.2, 0.2, 0.2, 16.0);
+ground.setMaterialName("GroundMat");
+
+// Create grid of cubes as reference points
+var cubeSize = 1.0;
+var spacing = 5.0;
+
+for (var x = -20.0; x <= 20.0; x = x + spacing)
+{
+    for (var z = -20.0; z <= 20.0; z = z + spacing)
+    {
+        var cube = createCube(scene, "Cube_" + x + "_" + z, cubeSize);
+        var cubeNode = root.createChild();
+        cubeNode.setPosition(x, cubeSize / 2.0, z);
+        cubeNode.attachObject(cube);
+
+        // Alternate colors for grid pattern
+        var isRed = ((x / spacing + z / spacing) % 2) == 0;
+        var matName = "CubeMat_" + x + "_" + z;
+        var mat = createMaterial(matName);
+
+        if (isRed)
+        {
+            mat.setDiffuse(0.8, 0.2, 0.2, 1.0);
+        }
+        else
+        {
+            mat.setDiffuse(0.2, 0.2, 0.8, 1.0);
+        }
+        mat.setSpecular(0.5, 0.5, 0.5, 32.0);
+        cube.setMaterialName(matName);
+
+        cube.setCastShadows(true);
+    }
+}
+
+// Create tall pillars at corners
+var pillarPositions = [
+    {x: -15, z: -15},
+    {x: 15, z: -15},
+    {x: -15, z: 15},
+    {x: 15, z: 15}
+];
+
+for (var i = 0; i < 4; i = i + 1)
+{
+    var pos = pillarPositions[i];
+    var pillar = createCube(scene, "Pillar_" + i, 2.0, 10.0, 2.0);
+    var pillarNode = root.createChild();
+    pillarNode.setPosition(pos.x, 5.0, pos.z);
+    pillarNode.attachObject(pillar);
+
+    var pillarMat = createMaterial("PillarMat_" + i);
+    pillarMat.setDiffuse(0.8, 0.8, 0.2, 1.0);
+    pillarMat.setSpecular(0.9, 0.9, 0.9, 64.0);
+    pillar.setMaterialName("PillarMat_" + i);
+    pillar.setCastShadows(true);
+}
+
+// ========== CREATE HUD ==========
+var overlay = createOverlay("ControlsOverlay");
+overlay.show();
+
+var panel = createPanel("ControlsPanel", overlay);
+panel.setMetricsMode(0);
+panel.setPosition(10, 10);
+panel.setDimensions(500, 280);
+panel.setMaterialName("Core/StatsBlockCenter");
+
+var text = createTextArea("ControlsText", panel);
+text.setMetricsMode(0);
+text.setPosition(15, 15);
+text.setDimensions(470, 250);
+text.setCharHeight(16);
+text.setColour(1.0, 1.0, 1.0);
+
+var helpText = "FPS MOVEMENT CONTROLS\n\n";
+helpText = helpText + "W/S     - move() forward/backward\n";
+helpText = helpText + "A/D     - strafe() left/right\n";
+helpText = helpText + "SPACE   - climb() up\n";
+helpText = helpText + "L-CTRL  - climb() down\n";
+helpText = helpText + "ARROWS  - Look around (yaw/pitch)\n";
+helpText = helpText + "SHIFT   - Hold to move faster\n\n";
+helpText = helpText + "All movement uses TS_LOCAL by default\n";
+helpText = helpText + "ESC - Exit";
+
+text.setCaption(helpText);
+
+// Position indicator
+var posPanel = createPanel("PosPanel", overlay);
+posPanel.setMetricsMode(0);
+posPanel.setPosition(10, 300);
+posPanel.setDimensions(300, 80);
+posPanel.setMaterialName("Core/StatsBlockCenter");
+
+var posText = createTextArea("PosText", posPanel);
+posText.setMetricsMode(0);
+posText.setPosition(15, 15);
+posText.setDimensions(270, 50);
+posText.setCharHeight(14);
+posText.setColour(0.2, 1.0, 0.2);
+
+// ========== MOVEMENT VARIABLES ==========
+var moveSpeed = 10.0;
+var fastSpeed = 25.0;
+var lookSpeed = 60.0;
+
+var camPitch = 0.0;
+var maxPitch = 85.0;
+
+Info("FPS Movement demo started");
+Info("Use WASD + Space/Ctrl + Arrow keys to move around");
+
+while (EngineCanUpdate())
+{
+    var deltaTime = getDeltaTime();
+    updateInput();
+
+    // Exit on ESC
+    if (isKeyPressed(KEY_ESCAPE))
+    {
+        break;
+    }
+
+    // Determine current speed
+    var currentSpeed = moveSpeed;
+    if (isKeyDown(KEY_LSHIFT) || isKeyDown(KEY_RSHIFT))
+    {
+        currentSpeed = fastSpeed;
+    }
+
+    // ========== MOVEMENT (TS_LOCAL) ==========
+    // Forward/Backward - move()
+    if (isKeyDown(KEY_W))
+    {
+        cameraNode.move(currentSpeed, deltaTime, TS_LOCAL);
+    }
+    if (isKeyDown(KEY_S))
+    {
+        cameraNode.move(-currentSpeed, deltaTime, TS_LOCAL);
+    }
+
+    // Strafe Left/Right - strafe()
+    if (isKeyDown(KEY_A))
+    {
+        cameraNode.strafe(-currentSpeed, deltaTime, TS_LOCAL);
+    }
+    if (isKeyDown(KEY_D))
+    {
+        cameraNode.strafe(currentSpeed, deltaTime, TS_LOCAL);
+    }
+
+    // Climb Up/Down - climb()
+    if (isKeyDown(KEY_SPACE))
+    {
+        cameraNode.climb(currentSpeed, deltaTime, TS_LOCAL);
+    }
+    if (isKeyDown(KEY_LCTRL))
+    {
+        cameraNode.climb(-currentSpeed, deltaTime, TS_LOCAL);
+    }
+
+    // ========== LOOK AROUND ==========
+    var lookDelta = lookSpeed * deltaTime;
+
+    // Yaw (left/right)
+    if (isKeyDown(KEY_LEFT))
+    {
+        cameraNode.yaw(lookDelta, TS_LOCAL);
+    }
+    if (isKeyDown(KEY_RIGHT))
+    {
+        cameraNode.yaw(-lookDelta, TS_LOCAL);
+    }
+
+    // Pitch (up/down) with clamping
+    if (isKeyDown(KEY_UP))
+    {
+        camPitch = camPitch + lookDelta;
+        if (camPitch > maxPitch) camPitch = maxPitch;
+    }
+    if (isKeyDown(KEY_DOWN))
+    {
+        camPitch = camPitch - lookDelta;
+        if (camPitch < -maxPitch) camPitch = -maxPitch;
+    }
+
+    // Apply pitch rotation
+    // Reset orientation first, then apply yaw and pitch
+    // This prevents roll accumulation
+    var currentYaw = cameraNode.getOrientation();
+    cameraNode.resetOrientation();
+    cameraNode.yaw(0, TS_LOCAL); // Keep current yaw
+    cameraNode.pitch(camPitch, TS_LOCAL);
+
+    // ========== UPDATE HUD ==========
+    var pos = cameraNode.position;
+    var posString = "Position: ";
+    posString = posString + "X: " + Math.floor(pos.x * 10) / 10 + "  ";
+    posString = posString + "Y: " + Math.floor(pos.y * 10) / 10 + "  ";
+    posString = posString + "Z: " + Math.floor(pos.z * 10) / 10 + "\n";
+    posString = posString + "Pitch: " + Math.floor(camPitch * 10) / 10;
+
+    posText.setCaption(posString);
+
+    UpdateEngine(deltaTime);
+}
+
+ReleaseEngine();
+Info("Movement demo ended");

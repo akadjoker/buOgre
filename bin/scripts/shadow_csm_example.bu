@@ -1,0 +1,120 @@
+// ============================================
+// EXEMPLO DE CONFIGURAÇÃO DE CASCADE SHADOW MAPS (CSM)
+// ============================================
+
+// Função para configurar shadows básicas
+def setup_basic_shadows(scene)
+{
+    // Técnica de shadow: 4 = TEXTURE_MODULATIVE (melhor para CSM)
+    scene.setShadowTechnique(4);
+
+    // Configurar texturas de shadow
+    scene.setShadowTextureSettings(2048);  // Tamanho: 512, 1024, 2048, 4096
+    scene.setShadowTextureCount(3);        // Número de cascatas/splits
+
+    // Distância máxima para sombras (importante para CSM)
+    scene.setShadowFarDistance(300.0);
+
+    // Offset para luz direcional (evita shadow acne)
+    scene.setShadowDirLightTextureOffset(0.6);
+
+    // Habilitar self-shadow (objetos fazem sombra neles mesmos)
+    scene.setShadowTextureSelfShadow(true);
+
+    // Renderizar back faces para evitar peter-panning
+    scene.setShadowCasterRenderBackFaces(false);
+
+    // Cor das sombras (mais escuro = mais realista)
+    scene.setShadowColour(0.5, 0.5, 0.5);
+}
+
+// Função para configurar shadows de alta qualidade com CSM
+def setup_csm_shadows(scene)
+{
+    // Técnica de shadow
+    scene.setShadowTechnique(4);  // TEXTURE_MODULATIVE
+
+    // Configurar 3 cascatas para CSM
+    // Cada cascata cobre uma faixa de distância diferente
+    scene.setShadowTextureCount(3);  // 3 splits/cascatas
+
+    // Tamanhos diferentes para cada cascata (opcionalmente)
+    // Cascata 0 (perto): 2048x2048
+    // Cascata 1 (médio): 1024x1024
+    // Cascata 2 (longe): 512x512
+    scene.setShadowTextureSettings(2048);  // Tamanho base
+
+    // Formato de pixel para melhor qualidade
+    // 0 = PF_X8R8G8B8 (padrão)
+    // 1 = PF_FLOAT16_R (melhor qualidade)
+    // 2 = PF_FLOAT32_R (máxima qualidade, mais pesado)
+    scene.setShadowTexturePixelFormat(1);
+
+    // Configurar número de texturas por tipo de luz
+    // Para luz direcional (tipo 1), usar 3 texturas (cascatas)
+    scene.setShadowTextureCountPerLightType(1, 3);
+
+    // Distância total para sombras (ajustar conforme cena)
+    scene.setShadowFarDistance(500.0);
+
+    // Offset para evitar shadow acne
+    scene.setShadowDirLightTextureOffset(0.8);
+
+    // Habilitar self-shadow
+    scene.setShadowTextureSelfShadow(true);
+
+    // Back faces
+    scene.setShadowCasterRenderBackFaces(true);
+
+    // Cor das sombras (mais suave)
+    scene.setShadowColour(0.6, 0.6, 0.65);
+}
+
+// Função para configurar shadows de performance (qualidade baixa)
+def setup_fast_shadows(scene)
+{
+    scene.setShadowTechnique(4);
+    scene.setShadowTextureSettings(512);  // Texturas pequenas
+    scene.setShadowTextureCount(1);       // Apenas 1 split
+    scene.setShadowFarDistance(150.0);    // Distância curta
+    scene.setShadowDirLightTextureOffset(0.5);
+    scene.setShadowTextureSelfShadow(false);
+    scene.setShadowCasterRenderBackFaces(false);
+    scene.setShadowColour(0.7, 0.7, 0.7);  // Sombras mais claras
+}
+
+// ============================================
+// EXEMPLO DE USO
+// ============================================
+
+/*
+// No teu main.bu, após criar a cena:
+
+var scene = CreateScene();
+
+// Escolher um dos setups:
+setup_basic_shadows(scene);      // Sombras básicas
+// ou
+setup_csm_shadows(scene);        // CSM de alta qualidade
+// ou
+setup_fast_shadows(scene);       // Performance
+
+// Criar luz direcional (importante para CSM)
+var sunLight = scene.createLight("Sun", 1);  // 1 = directional
+sunLight.setDiffuse(1.0, 0.95, 0.9);
+sunLight.setSpecular(1.0, 1.0, 1.0);
+
+var sunNode = rootNode.createChild();
+sunNode.attachObject(sunLight);
+sunNode.setDirection(0.3, -0.5, 0.7);  // Direção da luz
+
+// Criar objetos que fazem sombra
+var entity = scene.createEntity("Sinbad.mesh");
+entity.castShadows = true;  // Importante!
+
+// Criar chão para receber sombras
+var planeObj = scene.createPlane("groundPlane", 200, 200, 10, 10, "BaseWhiteNoLighting");
+planeObj.convertToMesh("groundMesh");
+var ground = scene.createEntity("groundMesh");
+ground.setCastShadows(false);  // Chão não faz sombra
+*/

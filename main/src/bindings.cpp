@@ -38,7 +38,7 @@ namespace OgreVector3Bindings
     // Destructor
     void vector3_dtor(Interpreter *vm, void *data)
     {
-        Info("Vector3 destructed");
+       // Info("Vector3 destructed");
         delete static_cast<Ogre::Vector3 *>(data);
     }
 
@@ -352,7 +352,7 @@ namespace OgreBindings
         OgreParticleSystemBindings::registerAll(vm);
         OgreRibbonTrailBindings::registerAll(vm);
         OgreTerrainBindings::registerAll(vm);
-        ProceduralMeshBindings::registerAll(vm);
+      
         OgreManualObjectBindings::registerAll(vm);
         OgreResourceManagerBindings::registerAll(vm);
         OgreMaterialBindings::registerAll(vm);

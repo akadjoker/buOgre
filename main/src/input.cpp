@@ -31,7 +31,7 @@ namespace InputBindings
             if (scancode < 512) gCurrentKeyState[scancode] = true;
             gKeyPressedQueue.push(scancode);
 
-            Info("Key pressed: scancode=%d", scancode);
+       //     Info("Key pressed: scancode=%d", scancode);
             
             // Char pressionado
             if (event.key.keysym.sym >= 32 && event.key.keysym.sym <= 126)

@@ -1,0 +1,133 @@
+// ============================================
+// TESTE SIMPLES DE SOMBRAS (GARANTIDO FUNCIONAR)
+// ============================================
+
+include "keys.bu";
+
+def load_resources()
+{
+    addResourceLocation("./assets", "FileSystem", "General");
+    addResourceLocation("./assets/packs/Sinbad.zip", "Zip", "General");
+    addResourceLocation("./assets/packs/skybox.zip", "Zip", "General");
+    initialiseAllResourceGroups();
+}
+
+load_resources();
+
+// Criar cena (já tem luz e shadows configuradas no C++)
+var scene = CreateScene();
+var rootNode = scene.getRoot();
+var camera = rootNode.createChild();
+
+print("===========================================");
+print("TESTE DE SOMBRAS");
+print("===========================================");
+print("A luz e shadows já foram configuradas no C++!");
+print("Verifica se vês sombras no chão.");
+print("===========================================");
+
+// ========== CÂMERA ==========
+var cam = scene.createCamera("MainCam");
+cam.setNearClip(0.1);
+camera.attachObject(cam);
+camera.setPosition(0, 25, 60);  // Posição boa para ver sombras
+camera.lookAt(0, 5, 0, TS_WORLD);
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.3, 0.4, 0.5);
+
+// Ambient light (já está no CreateScene, mas reforçar)
+scene.setAmbientLight(0.2, 0.2, 0.2);
+
+// ========== CHÃO (RECEBE SOMBRAS) ==========
+print("Criando chão...");
+var groundPlane = scene.createPlane("GroundPlane", 200.0, 200.0, 10, 10, "BaseWhiteNoLighting");
+groundPlane.convertToMesh("GroundMesh");
+
+var ground = scene.createEntity("GroundMesh");
+ground.setCastShadows(false);  // Chão NÃO faz sombra, só recebe
+
+var groundNode = rootNode.createChild();
+groundNode.attachObject(ground);
+groundNode.setPosition(0, 0, 0);
+
+// ========== OBJETOS QUE FAZEM SOMBRA ==========
+print("Criando Sinbad...");
+var sinbad = scene.createEntity("Sinbad.mesh");
+sinbad.castShadows = true;  // IMPORTANTE!
+var sinbadNode = rootNode.createChild();
+sinbadNode.attachObject(sinbad);
+sinbadNode.setPosition(0, 0, 0);
+
+print("Criando cabeça de Ogre...");
+var ogreHead = scene.createEntity("ogrehead.mesh");
+ogreHead.castShadows = true;  // IMPORTANTE!
+var headNode = rootNode.createChild();
+headNode.attachObject(ogreHead);
+headNode.setPosition(15, 10, 0);
+headNode.setScale(0.15, 0.15, 0.15);
+
+// Skybox
+scene.setSkyBox(true, "Examples/CloudyNoonSkyBox", 5000.0);
+
+// FPS overlay
+CreateFPSOverlay();
+
+print("");
+print("Scene criada!");
+print("Deves ver:");
+print("  - Sinbad no centro");
+print("  - Cabeça de Ogre à direita");
+print("  - SOMBRAS NO CHÃO (se tudo OK)");
+print("");
+print("ESC = sair");
+print("===========================================");
+
+// FPS controller simples
+var fpsController = FPSController(camera);
+fpsController.moveSpeed = 30.0;
+fpsController.mouseSensitivity = 0.15;
+
+var lastMouseX = getMouseX();
+var lastMouseY = getMouseY();
+
+while(EngineCanUpdate())
+{
+    var deltaTime = getDeltaTime();
+    var fps = getFPS();
+
+    // Sair com ESC
+    if (isKeyDown(KEY_ESCAPE))
+    {
+        break;
+    }
+
+    // Camera controls
+    fpsController.setMoveForward(isKeyDown(KEY_W));
+    fpsController.setMoveBackward(isKeyDown(KEY_S));
+    fpsController.setMoveLeft(isKeyDown(KEY_A));
+    fpsController.setMoveRight(isKeyDown(KEY_D));
+    fpsController.setMoveUp(isKeyDown(KEY_Q));
+    fpsController.setMoveDown(isKeyDown(KEY_Z));
+
+    var mouseX = getMouseX();
+    var mouseY = getMouseY();
+    var mouseDeltaX = 0;
+    var mouseDeltaY = 0;
+
+    if (isMouseButtonDown(MOUSE_LEFT))
+    {
+        mouseDeltaX = mouseX - lastMouseX;
+        mouseDeltaY = mouseY - lastMouseY;
+    }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
+    fpsController.update(deltaTime, -mouseDeltaX, mouseDeltaY);
+
+    UpdateFPSText(fps);
+    UpdateEngine(deltaTime);
+}
+
+ReleaseEngine();

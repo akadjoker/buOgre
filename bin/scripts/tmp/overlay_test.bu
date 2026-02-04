@@ -1,0 +1,170 @@
+// ============================================================
+// OVERLAY TESTING
+// ============================================================
+
+include "keys.bu";
+include "constants.bu";
+
+CreateEngine(1024, 720, "Overlay Test", 1, false, true);
+CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+
+addResourceLocation("./media/Main", "FileSystem", "OgreInternal");
+addResourceLocation("./media/RTShaderLib", "FileSystem", "OgreInternal");
+initialiseAllResourceGroups();
+
+var scene = CreateScene();
+var rootNode = scene.getRoot();
+scene.setAmbientLight(0.5, 0.5, 0.5);
+
+// Create ground
+var groundEntity = scene.createEntity("ground");
+var groundNode = rootNode.createChild();
+groundNode.attachObject(groundEntity);
+
+// Create camera
+var cam = scene.createCamera("MainCam");
+var cameraNode = rootNode.createChild();
+cameraNode.attachObject(cam);
+cameraNode.setPosition(0, 20, 50);
+cameraNode.lookAt(0, 0, 0, TS_LOCAL);
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.2, 0.3, 0.5);
+
+print("=== OVERLAY TEST ===");
+print("Testing TextArea, Panel, and Overlay functionality");
+
+// ========== TEST 1: Simple Text Overlay ==========
+print("\n[TEST 1] Creating simple text overlay...");
+
+var overlay1 = CreateOverlay("TestOverlay1");
+var textArea1 = CreateTextArea("TestText1");
+
+textArea1.setPosition(10, 10);          // Pixel position
+textArea1.setDimensions(400, 40);       // Width x Height
+textArea1.setCharHeight(24);            // Font size
+textArea1.setFontName("BlueHighway");   // Font name
+textArea1.setCaption("Hello Overlay! This is a test.");
+textArea1.setColour(1.0, 1.0, 0.0, 1.0);  // Yellow text
+textArea1.setMetricsMode(0);            // 0=pixels, 1=relative
+
+var panel1 = CreatePanel("Panel1");
+panel1.setPosition(5, 5);
+panel1.setDimensions(410, 50);
+panel1.setMaterialName("BaseWhiteNoLighting");
+
+panel1.addChild(textArea1);
+overlay1.addElement(panel1);
+overlay1.show();
+
+print("[OK] Simple text overlay created!");
+
+// ========== TEST 2: FPS Counter ==========
+print("\n[TEST 2] Creating FPS counter...");
+
+CreateFPSOverlay();
+print("[OK] FPS counter created!");
+
+// ========== TEST 3: Multiple Text Elements ==========
+print("\n[TEST 3] Creating multiple text elements...");
+
+var overlay2 = CreateOverlay("TestOverlay2");
+
+var text2 = CreateTextArea("InfoText");
+text2.setPosition(10, 60);
+text2.setDimensions(500, 100);
+text2.setCharHeight(18);
+text2.setFontName("BlueHighway");
+text2.setCaption("Camera Position: (0, 20, 50)\nControls:\n  WASD - Move\n  Mouse - Look Around");
+text2.setColour(0.0, 1.0, 1.0, 1.0);  // Cyan text
+text2.setMetricsMode(0);
+
+var panel2 = CreatePanel("Panel2");
+panel2.setPosition(5, 55);
+panel2.setDimensions(510, 120);
+panel2.setMaterialName("BaseWhiteNoLighting");
+
+panel2.addChild(text2);
+overlay2.addElement(panel2);
+overlay2.show();
+
+print("[OK] Multiple text elements created!");
+
+// ========== TEST 4: Color Test ==========
+print("\n[TEST 4] Creating color test...");
+
+var overlay3 = CreateOverlay("TestOverlay3");
+
+var textRed = CreateTextArea("TextRed");
+textRed.setPosition(10, 180);
+textRed.setDimensions(200, 30);
+textRed.setCharHeight(20);
+textRed.setFontName("BlueHighway");
+textRed.setCaption("RED TEXT");
+textRed.setColour(1.0, 0.0, 0.0, 1.0);  // Red
+textRed.setMetricsMode(0);
+
+var textGreen = CreateTextArea("TextGreen");
+textGreen.setPosition(220, 180);
+textGreen.setDimensions(200, 30);
+textGreen.setCharHeight(20);
+textGreen.setFontName("BlueHighway");
+textGreen.setCaption("GREEN TEXT");
+textGreen.setColour(0.0, 1.0, 0.0, 1.0);  // Green
+textGreen.setMetricsMode(0);
+
+var textBlue = CreateTextArea("TextBlue");
+textBlue.setPosition(430, 180);
+textBlue.setDimensions(200, 30);
+textBlue.setCharHeight(20);
+textBlue.setFontName("BlueHighway");
+textBlue.setCaption("BLUE TEXT");
+textBlue.setColour(0.0, 0.0, 1.0, 1.0);  // Blue
+textBlue.setMetricsMode(0);
+
+var panel3 = CreatePanel("Panel3");
+panel3.setPosition(5, 175);
+panel3.setDimensions(640, 50);
+panel3.setMaterialName("BaseWhiteNoLighting");
+
+panel3.addChild(textRed);
+panel3.addChild(textGreen);
+panel3.addChild(textBlue);
+
+overlay3.addElement(panel3);
+overlay3.show();
+
+print("[OK] Color test created!");
+
+// ========== MAIN LOOP ==========
+print("\n=== ALL TESTS COMPLETE ===");
+print("Press ESC to exit");
+
+var fpsCounter = 0;
+var timeAccum = 0.0;
+
+while(EngineCanUpdate())
+{
+    var deltaTime = getDeltaTime();
+    timeAccum += deltaTime;
+    fpsCounter++;
+
+    // Update FPS every second
+    if (timeAccum >= 1.0)
+    {
+        UpdateFPSText(fpsCounter);
+        fpsCounter = 0;
+        timeAccum = 0.0;
+    }
+
+    // Exit on ESC
+    if (isKeyPressed(KEY_ESCAPE))
+    {
+        break;
+    }
+
+    UpdateEngine(deltaTime);
+}
+
+ReleaseEngine();
+print("Test completed!");

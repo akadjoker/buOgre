@@ -1,0 +1,240 @@
+// ============================================================
+// TUTORIAL 4 - EFEITOS VISUAIS
+// Aprenda: Partículas, Fog, Skybox, Billboards, Compositor
+// ============================================================
+
+include "keys.bu";
+
+def main()
+{
+    print("=== TUTORIAL 4 - EFEITOS VISUAIS ===");
+    print("Aprenda a adicionar efeitos visuais ao seu jogo");
+    print("Press 1/2/3 para alternar efeitos");
+
+    CreateEngine(1280, 720, "Tutorial - Effects", 1, false, true);
+
+    addResourceLocation("./media", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = Scene();
+    scene.setAmbientLight(0.4, 0.4, 0.45);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // ========== SKYBOX ==========
+    print("Adicionando skybox...");
+    setSkyBox(scene, true, "Examples/CloudyNoonSkyBox", 5000.0);
+    print("✓ Skybox adicionado");
+
+    // ========== FOG ==========
+    print("Adicionando fog...");
+    setFogLinear(scene, 0.6, 0.7, 0.8, 30.0, 150.0);
+    print("✓ Fog adicionado");
+
+    // Luz
+    var light = scene.createLight("Sun", 1);
+    light.setDiffuse(1.0, 0.95, 0.8);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(500, 700, 300);
+
+    // Chão
+    CreatePlane("ground", 2000, 2000, 20, 20, true, 1, 20.0, 20.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== PARTÍCULAS ==========
+    print("Criando sistemas de partículas...");
+
+    // Smoke particles
+    var smoke = createParticleSystem(scene, "Smoke", "Examples/Smoke");
+    smoke.emitting = true;
+    var smokeNode = rootNode.createChild();
+    smokeNode.attachObject(smoke);
+    smokeNode.setPosition(-8, 3, 0);
+    print("✓ Smoke particles");
+
+    // Fountain particles (se disponível)
+    var fountain = createParticleSystem(scene, "Fountain", "Examples/PurpleFountain");
+    fountain.emitting = true;
+    var fountainNode = rootNode.createChild();
+    fountainNode.attachObject(fountain);
+    fountainNode.setPosition(8, 3, 0);
+    print("✓ Fountain particles");
+
+    // ========== BILLBOARDS ==========
+    print("Criando billboards...");
+
+    var billboards = createBillboardSet(scene, "Lights", 50);
+    billboards.setMaterialName("BaseWhiteNoLighting");
+    billboards.setBillboardDimensions(1.5, 1.5);
+
+    // Criar grid de luzes flutuantes
+    for (var i = 0; i < 25; i = i + 1)
+    {
+        var x = (i % 5 - 2) * 5.0;
+        var z = (floor(i / 5) - 2) * 5.0;
+        var y = 5.0 + sin(i * 0.5) * 2.0;
+
+        var hue = i / 25.0;
+        billboards.createBillboard(x, y, z, hue, 1.0 - hue, 0.5, 1.0);
+    }
+
+    var bbNode = rootNode.createChild();
+    bbNode.attachObject(billboards);
+    print("✓ 25 billboards criados");
+
+    // ========== RIBBON TRAIL ==========
+    print("Criando ribbon trail...");
+
+    var movingSphere = createSphere(scene, "TrackedSphere", 1.0, 16, 16);
+    var sphereEntity = scene.createEntity(movingSphere);
+    var sphereNode = rootNode.createChild();
+    sphereNode.attachObject(sphereEntity);
+    sphereNode.setPosition(0, 5, 0);
+
+    // Material emissivo para esfera
+    var sphereMat = createMaterial("SphereMat");
+    sphereMat.setEmissive(1.0, 0.5, 0.0);
+    sphereMat.setDiffuse(1.0, 0.5, 0.0, 1.0);
+    sphereEntity.setMaterialName("SphereMat");
+
+    var trail = createRibbonTrail(scene, "SphereTrail");
+    trail.setMaterialName("Examples/LightRibbonTrail");
+    trail.setTrailLength(25.0);
+    trail.setMaxChainElements(100);
+    trail.addNode(sphereNode);
+    trail.setInitialColour(0, 1.0, 0.5, 0.0, 1.0);
+    trail.setColourChange(0, 0.0, 0.0, 0.0, -0.4);
+    trail.setInitialWidth(0, 1.0);
+
+    var trailNode = rootNode.createChild();
+    trailNode.attachObject(trail);
+    print("✓ Ribbon trail criado");
+
+    // ========== CAMERA ==========
+
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 15, 30);
+    cameraNode.lookAt(0, 5, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.5, 0.6, 0.7);
+
+    // ========== COMPOSITOR: BLOOM ==========
+    print("Aplicando compositor (Bloom)...");
+    var bloomSuccess = setupBloom(viewport);
+    if (bloomSuccess)
+    {
+        print("✓ Bloom compositor ativado");
+    }
+    else
+    {
+        print("⚠ Bloom compositor não disponível");
+    }
+
+    // ========== FPS OVERLAY ==========
+    createFPSOverlay();
+
+    var time = 0.0;
+    var frameCount = 0;
+    var fpsTimer = 0.0;
+    var effectsEnabled = true;
+
+    print("");
+    print("=== CONTROLES ===");
+    print("1 - Toggle Particles");
+    print("2 - Toggle Fog");
+    print("3 - Toggle Skybox");
+    print("");
+    print("Todos os efeitos estão ativos!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        time = time + deltaTime;
+
+        // FPS
+        frameCount = frameCount + 1;
+        fpsTimer = fpsTimer + deltaTime;
+        if (fpsTimer >= 1.0)
+        {
+            updateFPSText(frameCount);
+            frameCount = 0;
+            fpsTimer = 0.0;
+        }
+
+        // ========== TOGGLE EFFECTS ==========
+
+        if (isKeyPressed(KEY_1))
+        {
+            smoke.emitting = !smoke.emitting;
+            fountain.emitting = !fountain.emitting;
+            print("Particles: " + (smoke.emitting ? "ON" : "OFF"));
+        }
+
+        if (isKeyPressed(KEY_2))
+        {
+            if (effectsEnabled)
+            {
+                disableFog(scene);
+                print("Fog: OFF");
+                effectsEnabled = false;
+            }
+            else
+            {
+                setFogLinear(scene, 0.6, 0.7, 0.8, 30.0, 150.0);
+                print("Fog: ON");
+                effectsEnabled = true;
+            }
+        }
+
+        if (isKeyPressed(KEY_3))
+        {
+            setSkyBox(scene, !effectsEnabled, "Examples/CloudyNoonSkyBox", 5000.0);
+            print("Skybox: " + (!effectsEnabled ? "ON" : "OFF"));
+        }
+
+        // ========== ANIMAR ESFERA COM TRAIL ==========
+
+        var orbitRadius = 8.0;
+        var orbitSpeed = 0.7;
+        var orbitHeight = 5.0 + sin(time * 2.0) * 3.0;
+
+        sphereNode.setPosition(
+            cos(time * orbitSpeed) * orbitRadius,
+            orbitHeight,
+            sin(time * orbitSpeed) * orbitRadius
+        );
+
+        // ========== ANIMAR BILLBOARDS ==========
+
+        for (var i = 0; i < 25; i = i + 1)
+        {
+            var x = (i % 5 - 2) * 5.0;
+            var z = (floor(i / 5) - 2) * 5.0;
+            var y = 5.0 + sin(time * 2.0 + i * 0.5) * 2.0;
+
+            billboards.setBillboardPosition(i, x, y, z);
+        }
+
+        // ========== CAMERA ORBITAL ==========
+
+        var camAngle = time * 0.2;
+        cameraNode.setPosition(
+            cos(camAngle) * 40.0,
+            15 + sin(time * 0.3) * 5.0,
+            sin(camAngle) * 40.0
+        );
+        cameraNode.lookAt(0, 5, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+ 

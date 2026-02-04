@@ -1,0 +1,15 @@
+ 
+
+var TS_LOCAL = 0;   // Transform relative to local space (node's own orientation)
+var TS_PARENT = 1;  // Transform relative to parent space
+var TS_WORLD = 2;   // Transform relative to world space (global coordinates)
+
+// Example usage:
+//   node.move(speed, deltaTime, TS_LOCAL);      // Move forward/backward
+//   node.strafe(speed, deltaTime, TS_LOCAL);    // Move left/right (strafe)
+//   node.climb(speed, deltaTime, TS_LOCAL);     // Move up/down
+//   node.yaw(45.0, TS_LOCAL);                   // Rotate around Y axis
+//   node.pitch(30.0, TS_LOCAL);                 // Rotate around X axis
+//   node.translate(10, 0, 0, TS_WORLD);         // Move in world space
+//   node.lookAt(0, 0, 0, TS_WORLD);             // Look at world origin
+

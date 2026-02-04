@@ -1,0 +1,183 @@
+// ============================================
+// TESTE DE DIFERENTES TIPOS DE SOMBRAS
+// ============================================
+
+include "keys.bu";
+include "constants.bu";
+
+def load_resources()
+{
+    addResourceLocation("./assets", "FileSystem", "General");
+    addResourceLocation("./assets/models", "FileSystem", "General");
+    addResourceLocation("./assets/materials", "FileSystem", "General");
+    addResourceLocation("./assets/materials/textures", "FileSystem", "General");
+    addResourceLocation("./assets/materials/scripts", "FileSystem", "General");
+    addResourceLocation("./assets/packs/Sinbad.zip", "Zip", "General");
+    addResourceLocation("./assets/packs/skybox.zip", "Zip", "General");
+    initialiseAllResourceGroups();
+}
+
+load_resources();
+
+var scene = CreateScene();
+var rootNode = scene.getRoot();
+var camera = rootNode.createChild();
+
+// ========== CONFIGURAÇÃO INICIAL ==========
+scene.setAmbientLight(0.2, 0.2, 0.2);
+
+// LUZ DIRECIONAL (importante para shadows)
+var sun = scene.createLight("Sun", 1);  // 1 = directional
+sun.setDiffuse(1.0, 0.95, 0.9);
+sun.setSpecular(1.0, 1.0, 1.0);
+
+var sunNode = rootNode.createChild();
+sunNode.attachObject(sun);
+sunNode.setDirection(0.3, -0.75, 0.5);  // Aponta para baixo
+
+// CÂMERA
+var cam = scene.createCamera("MainCam");
+cam.setNearClip(0.1);
+camera.attachObject(cam);
+camera.setPosition(0, 30, 80);
+camera.lookAt(0, 5, 0, TS_WORLD);
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.2, 0.3, 0.4);
+
+// ========== CRIAR CHÃO (RECEBE SOMBRAS) ==========
+var groundPlane = scene.createPlane("GroundPlane", 200.0, 200.0, 10, 10, "BaseWhiteNoLighting");
+groundPlane.convertToMesh("GroundMesh");
+
+var ground = scene.createEntity("GroundMesh");
+ground.setCastShadows(false);  // Chão não faz sombra
+
+var groundNode = rootNode.createChild();
+groundNode.attachObject(ground);
+groundNode.setPosition(0, 0, 0);
+
+// ========== CRIAR OBJETOS QUE FAZEM SOMBRA ==========
+
+// Sinbad
+var sinbad = scene.createEntity("Sinbad.mesh");
+sinbad.castShadows = true;
+var sinbadNode = rootNode.createChild();
+sinbadNode.attachObject(sinbad);
+sinbadNode.setPosition(0, 0, 0);
+sinbadNode.setScale(0.5, 0.5, 0.5);
+
+// Cubo
+var cubeObj = scene.createCube("TestCube", 5.0, "BaseWhiteNoLighting");
+cubeObj.convertToMesh("CubeMesh");
+var cube = scene.createEntity("CubeMesh");
+cube.setCastShadows(true);
+var cubeNode = rootNode.createChild();
+cubeNode.attachObject(cube);
+cubeNode.setPosition(15, 2.5, 0);
+
+// Esfera
+var sphereObj = scene.createSphere("TestSphere", 3.0, 16, 16, "BaseWhiteNoLighting");
+sphereObj.convertToMesh("SphereMesh");
+var sphere = scene.createEntity("SphereMesh");
+sphere.setCastShadows(true);
+var sphereNode = rootNode.createChild();
+sphereNode.attachObject(sphere);
+sphereNode.setPosition(-15, 3, 0);
+
+// ========== FUNÇÕES PARA TROCAR SHADOW TYPE ==========
+
+var currentShadowType = 0;
+var shadowTypeNames = [
+    "NONE",
+    "STENCIL_ADDITIVE",
+    "STENCIL_MODULATIVE",
+    "TEXTURE_ADDITIVE",
+    "TEXTURE_MODULATIVE"
+];
+
+def setupShadows(type)
+{
+    print("Shadow Type: " + shadowTypeNames[type]);
+
+    scene.setShadowTechnique(type);
+
+    if (type == 3 || type == 4)  // TEXTURE shadows
+    {
+        print("  - Texture Size: 2048");
+        print("  - Texture Count: 3");
+        print("  - Far Distance: 300.0");
+
+        scene.setShadowTextureSize(2048);
+        scene.setShadowTextureCount(3);
+        scene.setShadowFarDistance(300.0);
+        scene.setShadowDirLightTextureOffset(0.6);
+        scene.setShadowTextureSelfShadow(true);
+        scene.setShadowCasterRenderBackFaces(false);
+        scene.setShadowColour(0.5, 0.5, 0.5);
+    }
+    elif (type == 1 || type == 2)  // STENCIL shadows
+    {
+        print("  - Stencil shadows (no extra config needed)");
+    }
+}
+
+// Começar com TEXTURE_MODULATIVE
+currentShadowType = 4;
+setupShadows(currentShadowType);
+
+// Skybox
+scene.setSkyBox(true, "Examples/CloudyNoonSkyBox", 5000.0);
+
+// Overlay
+CreateFPSOverlay();
+
+
+// FPS controller
+var fpsController = FPSController(camera);
+fpsController.moveSpeed = 50.0;
+fpsController.mouseSensitivity = 0.15;
+
+var lastMouseX = getMouseX();
+var lastMouseY = getMouseY();
+
+while(EngineCanUpdate())
+{
+    var deltaTime = getDeltaTime();
+    var fps = getFPS();
+
+    // Trocar shadow type
+    if (isKeyDown(KEY_1)) { currentShadowType = 0; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_2)) { currentShadowType = 1; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_3)) { currentShadowType = 2; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_4)) { currentShadowType = 3; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_5)) { currentShadowType = 4; setupShadows(currentShadowType); }
+
+    // Camera controls
+    fpsController.setMoveForward(isKeyDown(KEY_W));
+    fpsController.setMoveBackward(isKeyDown(KEY_S));
+    fpsController.setMoveLeft(isKeyDown(KEY_A));
+    fpsController.setMoveRight(isKeyDown(KEY_D));
+    fpsController.setMoveUp(isKeyDown(KEY_Q));
+    fpsController.setMoveDown(isKeyDown(KEY_Z));
+
+    var mouseX = getMouseX();
+    var mouseY = getMouseY();
+    var mouseDeltaX = 0;
+    var mouseDeltaY = 0;
+
+    if (isMouseButtonDown(MOUSE_LEFT))
+    {
+        mouseDeltaX = mouseX - lastMouseX;
+        mouseDeltaY = mouseY - lastMouseY;
+    }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
+    fpsController.update(deltaTime, -mouseDeltaX, mouseDeltaY);
+
+    UpdateFPSText(fps);
+    UpdateEngine(deltaTime);
+}
+
+ReleaseEngine();

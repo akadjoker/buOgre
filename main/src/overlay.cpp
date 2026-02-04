@@ -5,6 +5,8 @@
 #include <OgreOverlayElement.h>
 #include <OgreTextAreaOverlayElement.h>
 #include <OgrePanelOverlayElement.h>
+#include <OgreOverlaySystem.h>
+#include <OgreFontManager.h>
 
 // ============== OGRE OVERLAY BINDINGS ==============
 // 2D UI system (HUD, menus, debug text, FPS counter)
@@ -72,15 +74,14 @@ namespace OgreOverlayBindings
         try
         {
             Ogre::OverlayElement *element = Ogre::OverlayManager::getSingleton().createOverlayElement(
-                "TextArea", name
-            );
+                "TextArea", name);
 
             if (!element)
             {
                 Error("createTextArea: failed to create text area '%s'", name);
                 return 0;
             }
-
+            element->setMetricsMode(Ogre::GMM_PIXELS);
             NativeClassDef *textClass = nullptr;
             if (!vm->tryGetNativeClassDef("TextArea", &textClass))
             {
@@ -118,14 +119,14 @@ namespace OgreOverlayBindings
         try
         {
             Ogre::OverlayElement *element = Ogre::OverlayManager::getSingleton().createOverlayElement(
-                "Panel", name
-            );
+                "Panel", name);
 
             if (!element)
             {
                 Error("createPanel: failed to create panel '%s'", name);
                 return 0;
             }
+            element->setMetricsMode(Ogre::GMM_PIXELS);
 
             NativeClassDef *panelClass = nullptr;
             if (!vm->tryGetNativeClassDef("Panel", &panelClass))
@@ -156,7 +157,8 @@ namespace OgreOverlayBindings
     int overlay_show(Interpreter *vm, void *data, int argCount, Value *args)
     {
         Ogre::Overlay *overlay = static_cast<Ogre::Overlay *>(data);
-        if (overlay) overlay->show();
+        if (overlay)
+            overlay->show();
         return 0;
     }
 
@@ -164,42 +166,69 @@ namespace OgreOverlayBindings
     int overlay_hide(Interpreter *vm, void *data, int argCount, Value *args)
     {
         Ogre::Overlay *overlay = static_cast<Ogre::Overlay *>(data);
-        if (overlay) overlay->hide();
+        if (overlay)
+            overlay->hide();
         return 0;
     }
 
     // setZOrder(z)
     int overlay_setZOrder(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+            return 0;
 
         Ogre::Overlay *overlay = static_cast<Ogre::Overlay *>(data);
-        if (overlay) overlay->setZOrder((uint16_t)args[0].asNumber());
+        if (overlay)
+            overlay->setZOrder((uint16_t)args[0].asNumber());
         return 0;
     }
 
     // addElement(element)
     int overlay_addElement(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("addElement: requires 1 argument (element)");
+            return 0;
+        }
 
         Ogre::Overlay *overlay = static_cast<Ogre::Overlay *>(data);
+        if (!overlay)
+        {
+            Error("addElement: invalid overlay");
+            return 0;
+        }
+
+        if (!args[0].isNativeClassInstance())
+        {
+            Error("addElement: argument must be an element");
+            return 0;
+        }
+
         NativeClassInstance *elementInstance = args[0].asNativeClassInstance();
+        if (!elementInstance || !elementInstance->userData)
+        {
+            Error("addElement: invalid element instance");
+            return 0;
+        }
+
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(elementInstance->userData);
 
-        if (overlay && element)
+        // Cast to container
+        Ogre::OverlayContainer *container = dynamic_cast<Ogre::OverlayContainer *>(element);
+        if (!container)
         {
-            // Cast to container first
-            Ogre::OverlayContainer *container = dynamic_cast<Ogre::OverlayContainer *>(element);
-            if (container)
-            {
-                overlay->add2D(container);
-            }
-            else
-            {
-                // If it's not a container, we need to create one or add to existing
-                Error("addElement: element must be a container (Panel)");
-            }
+            Error("addElement: element must be a container (Panel)");
+            return 0;
+        }
+
+        try
+        {
+            overlay->add2D(container);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("addElement exception: %s", e.what());
         }
 
         return 0;
@@ -210,12 +239,26 @@ namespace OgreOverlayBindings
     // setCaption(text)
     int textarea_setCaption(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("setCaption: requires 1 argument (text)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        if (element)
+        if (!element)
+        {
+            Error("setCaption: invalid element");
+            return 0;
+        }
+
+        try
         {
             element->setCaption(args[0].asStringChars());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setCaption exception: %s", e.what());
         }
         return 0;
     }
@@ -223,15 +266,28 @@ namespace OgreOverlayBindings
     // setPosition(x, y)
     int textarea_setPosition(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 2) return 0;
+        if (argCount < 2)
+        {
+            Error("setPosition: requires 2 arguments (x, y)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        if (element)
+        if (!element)
+        {
+            Error("setPosition: invalid element");
+            return 0;
+        }
+
+        try
         {
             element->setPosition(
                 (float)args[0].asNumber(),
-                (float)args[1].asNumber()
-            );
+                (float)args[1].asNumber());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setPosition exception: %s", e.what());
         }
         return 0;
     }
@@ -239,15 +295,28 @@ namespace OgreOverlayBindings
     // setDimensions(width, height)
     int textarea_setDimensions(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 2) return 0;
+        if (argCount < 2)
+        {
+            Error("setDimensions: requires 2 arguments (width, height)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        if (element)
+        if (!element)
+        {
+            Error("setDimensions: invalid element");
+            return 0;
+        }
+
+        try
         {
             element->setDimensions(
                 (float)args[0].asNumber(),
-                (float)args[1].asNumber()
-            );
+                (float)args[1].asNumber());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setDimensions exception: %s", e.what());
         }
         return 0;
     }
@@ -256,14 +325,28 @@ namespace OgreOverlayBindings
     // 0 = GMM_PIXELS, 1 = GMM_RELATIVE
     int textarea_setMetricsMode(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("setMetricsMode: requires 1 argument (mode)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        if (element)
+        if (!element)
+        {
+            Error("setMetricsMode: invalid element");
+            return 0;
+        }
+
+        try
         {
             int mode = (int)args[0].asNumber();
             Ogre::GuiMetricsMode gmm = (mode == 0) ? Ogre::GMM_PIXELS : Ogre::GMM_RELATIVE;
             element->setMetricsMode(gmm);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setMetricsMode exception: %s", e.what());
         }
         return 0;
     }
@@ -271,14 +354,33 @@ namespace OgreOverlayBindings
     // setCharHeight(height)
     int textarea_setCharHeight(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("setCharHeight: requires 1 argument (height)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!element)
+        {
+            Error("setCharHeight: invalid element");
+            return 0;
+        }
 
-        if (textArea)
+        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!textArea)
+        {
+            Error("setCharHeight: element is not a TextArea");
+            return 0;
+        }
+
+        try
         {
             textArea->setCharHeight((float)args[0].asNumber());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setCharHeight exception: %s", e.what());
         }
         return 0;
     }
@@ -286,14 +388,33 @@ namespace OgreOverlayBindings
     // setFontName(fontName)
     int textarea_setFontName(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("setFontName: requires 1 argument (fontName)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!element)
+        {
+            Error("setFontName: invalid element");
+            return 0;
+        }
 
-        if (textArea)
+        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!textArea)
+        {
+            Error("setFontName: element is not a TextArea");
+            return 0;
+        }
+
+        try
         {
             textArea->setFontName(args[0].asStringChars());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFontName exception: %s", e.what());
         }
         return 0;
     }
@@ -301,20 +422,38 @@ namespace OgreOverlayBindings
     // setColour(r, g, b, a)
     int textarea_setColour(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 4) return 0;
+        if (argCount < 4)
+        {
+            Error("setColour: requires 4 arguments (r, g, b, a)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!element)
+        {
+            Error("setColour: invalid element");
+            return 0;
+        }
 
-        if (textArea)
+        Ogre::TextAreaOverlayElement *textArea = dynamic_cast<Ogre::TextAreaOverlayElement *>(element);
+        if (!textArea)
+        {
+            Error("setColour: element is not a TextArea");
+            return 0;
+        }
+
+        try
         {
             Ogre::ColourValue color(
                 (float)args[0].asNumber(),
                 (float)args[1].asNumber(),
                 (float)args[2].asNumber(),
-                (float)args[3].asNumber()
-            );
+                (float)args[3].asNumber());
             textArea->setColour(color);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setColour exception: %s", e.what());
         }
         return 0;
     }
@@ -324,12 +463,26 @@ namespace OgreOverlayBindings
     // setMaterialName(materialName)
     int panel_setMaterialName(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("setMaterialName: requires 1 argument (materialName)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
-        if (element)
+        if (!element)
+        {
+            Error("setMaterialName: invalid element");
+            return 0;
+        }
+
+        try
         {
             element->setMaterialName(args[0].asStringChars());
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setMaterialName exception: %s", e.what());
         }
         return 0;
     }
@@ -337,17 +490,53 @@ namespace OgreOverlayBindings
     // addChild(childElement)
     int panel_addChild(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+        {
+            Error("addChild: requires 1 argument (childElement)");
+            return 0;
+        }
 
         Ogre::OverlayElement *element = static_cast<Ogre::OverlayElement *>(data);
+        if (!element)
+        {
+            Error("addChild: invalid panel element");
+            return 0;
+        }
+
         Ogre::OverlayContainer *container = dynamic_cast<Ogre::OverlayContainer *>(element);
+        if (!container)
+        {
+            Error("addChild: element is not a container");
+            return 0;
+        }
+
+        if (!args[0].isNativeClassInstance())
+        {
+            Error("addChild: argument must be an element");
+            return 0;
+        }
 
         NativeClassInstance *childInstance = args[0].asNativeClassInstance();
-        Ogre::OverlayElement *child = static_cast<Ogre::OverlayElement *>(childInstance->userData);
+        if (!childInstance || !childInstance->userData)
+        {
+            Error("addChild: invalid child instance");
+            return 0;
+        }
 
-        if (container && child)
+        Ogre::OverlayElement *child = static_cast<Ogre::OverlayElement *>(childInstance->userData);
+        if (!child)
+        {
+            Error("addChild: child element is invalid");
+            return 0;
+        }
+
+        try
         {
             container->addChild(child);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("addChild exception: %s", e.what());
         }
 
         return 0;
@@ -362,23 +551,28 @@ namespace OgreOverlayBindings
             // Create overlay
             Ogre::Overlay *overlay = Ogre::OverlayManager::getSingleton().create("FPSOverlay");
 
+            auto &fm = Ogre::FontManager::getSingleton();
+            Ogre::FontPtr font = fm.create("MyFont", Ogre::RGN_DEFAULT);
+            font->setType(Ogre::FT_TRUETYPE);
+            font->setSource("cuckoo.ttf"); //  este ficheiro nos resources!
+            font->setTrueTypeSize(16);
+            font->setTrueTypeResolution(96);
+            font->load();
+
             // Create panel container
-            Ogre::OverlayContainer *panel = static_cast<Ogre::OverlayContainer *>(
-                Ogre::OverlayManager::getSingleton().createOverlayElement("Panel", "FPSPanel")
-            );
+            Ogre::OverlayContainer *panel = static_cast<Ogre::OverlayContainer *>(Ogre::OverlayManager::getSingleton().createOverlayElement("Panel", "FPSPanel"));
             panel->setMetricsMode(Ogre::GMM_PIXELS);
             panel->setPosition(10, 10);
             panel->setDimensions(200, 60);
 
             // Create FPS text
             Ogre::TextAreaOverlayElement *fpsText = static_cast<Ogre::TextAreaOverlayElement *>(
-                Ogre::OverlayManager::getSingleton().createOverlayElement("TextArea", "FPSText")
-            );
+                Ogre::OverlayManager::getSingleton().createOverlayElement("TextArea", "FPSText"));
             fpsText->setMetricsMode(Ogre::GMM_PIXELS);
             fpsText->setPosition(0, 0);
             fpsText->setDimensions(200, 20);
             fpsText->setCharHeight(16);
-            fpsText->setFontName("BlueHighway");
+            fpsText->setFontName("MyFont");
             fpsText->setColour(Ogre::ColourValue(1.0, 1.0, 0.0));
             fpsText->setCaption("FPS: 0");
 
@@ -386,7 +580,6 @@ namespace OgreOverlayBindings
             overlay->add2D(panel);
             overlay->show();
 
-            Info("FPS Overlay created");
             vm->pushBool(true);
             return 1;
         }
@@ -401,7 +594,8 @@ namespace OgreOverlayBindings
     // updateFPSText(fps) - helper to update FPS counter
     int updateFPSText(Interpreter *vm, int argCount, Value *args)
     {
-        if (argCount < 1) return 0;
+        if (argCount < 1)
+            return 0;
 
         try
         {
@@ -422,6 +616,88 @@ namespace OgreOverlayBindings
         return 0;
     }
 
+    int ensureFontTTF(Interpreter *vm, int argCount, Value *args)
+    {
+        if (argCount < 4)
+        {
+            Error("EnsureFontTTF(fontName, ttfFile, size, resolution)");
+            return 0;
+        }
+
+        const char *fontName = args[0].asStringChars();
+        const char *ttfFile = args[1].asStringChars();
+        int size = (int)args[2].asNumber();
+        int res = (int)args[3].asNumber();
+
+        try
+        {
+            auto &fm = Ogre::FontManager::getSingleton();
+
+            // já existe?
+            if (fm.resourceExists(fontName))
+            {
+                vm->pushBool(true);
+                return 1;
+            }
+
+            Ogre::FontPtr font = fm.create(fontName, Ogre::RGN_DEFAULT);
+            font->setType(Ogre::FT_TRUETYPE);
+            font->setSource(ttfFile);
+            font->setTrueTypeSize(size);
+            font->setTrueTypeResolution(res);
+            font->load();
+
+            vm->pushBool(true);
+            Info("Font '%s' loaded from '%s'", fontName, ttfFile);
+            return 1;
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("EnsureFontTTF failed: %s", e.getFullDescription().c_str());
+            vm->pushBool(false);
+            return 1;
+        }
+    }
+    int getOrCreateOverlay(Interpreter *vm, int argCount, Value *args)
+    {
+        if (argCount < 1)
+        {
+            Error("GetOrCreateOverlay(name)");
+            return 0;
+        }
+        const char *name = args[0].asStringChars();
+
+        try
+        {
+            auto &mgr = Ogre::OverlayManager::getSingleton();
+
+            Ogre::Overlay *overlay = mgr.getByName(name);
+            if (!overlay)
+                overlay = mgr.create(name);
+
+ 
+            NativeClassDef *overlayClass = nullptr;
+            if (!vm->tryGetNativeClassDef("Overlay", &overlayClass))
+            {
+                Error("Overlay class not found in VM");
+                return 0;
+            }
+
+            Value v = vm->makeNativeClassInstance(false);
+            auto *inst = v.asNativeClassInstance();
+            inst->klass = overlayClass;
+            inst->userData = (void *)overlay;
+
+            vm->push(v);
+            return 1;
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("GetOrCreateOverlay failed: %s", e.getFullDescription().c_str());
+            return 0;
+        }
+    }
+
     void registerAll(Interpreter &vm)
     {
         // Register Overlay class
@@ -429,9 +705,8 @@ namespace OgreOverlayBindings
             "Overlay",
             nullptr,
             nullptr,
-            0,
-            false
-        );
+            1,
+            false);
 
         vm.addNativeMethod(overlay, "show", overlay_show);
         vm.addNativeMethod(overlay, "hide", overlay_hide);
@@ -444,8 +719,7 @@ namespace OgreOverlayBindings
             nullptr,
             nullptr,
             0,
-            false
-        );
+            false);
 
         vm.addNativeMethod(textarea, "setCaption", textarea_setCaption);
         vm.addNativeMethod(textarea, "setPosition", textarea_setPosition);
@@ -461,8 +735,7 @@ namespace OgreOverlayBindings
             nullptr,
             nullptr,
             0,
-            false
-        );
+            false);
 
         vm.addNativeMethod(panel, "setPosition", textarea_setPosition);
         vm.addNativeMethod(panel, "setDimensions", textarea_setDimensions);
@@ -471,11 +744,13 @@ namespace OgreOverlayBindings
         vm.addNativeMethod(panel, "addChild", panel_addChild);
 
         // Global functions
-        vm.registerNative("createOverlay", createOverlay, 1);
-        vm.registerNative("createTextArea", createTextArea, 1);
-        vm.registerNative("createPanel", createPanel, 1);
-        vm.registerNative("createFPSOverlay", createFPSOverlay, 0);
-        vm.registerNative("updateFPSText", updateFPSText, 1);
+        vm.registerNative("CreateOverlay", createOverlay, 1);
+        vm.registerNative("CreateTextArea", createTextArea, 1);
+        vm.registerNative("CreatePanel", createPanel, 1);
+        vm.registerNative("CreateFPSOverlay", createFPSOverlay, 0);
+        vm.registerNative("UpdateFPSText", updateFPSText, 1);
+        vm.registerNative("EnsureFontTTF", ensureFontTTF, 4);
+        vm.registerNative("GetOrCreateOverlay", getOrCreateOverlay, 1);
 
         Info("Overlay bindings registered");
     }

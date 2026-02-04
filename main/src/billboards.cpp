@@ -6,62 +6,7 @@
 
 namespace OgreBillboardBindings
 {
-    // createBillboardSet(scene, name, poolSize) - global function
-    int createBillboardSet(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("createBillboardSet: requires scene and name");
-            return 0;
-        }
-
-        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
-
-        if (!scene)
-        {
-            Error("createBillboardSet: invalid scene");
-            return 0;
-        }
-
-        const char *name = args[1].asStringChars();
-        unsigned int poolSize = 20;
-
-        if (argCount >= 3) poolSize = (unsigned int)args[2].asNumber();
-
-        try
-        {
-            Ogre::BillboardSet *billboardSet = scene->createBillboardSet(name, poolSize);
-
-            if (!billboardSet)
-            {
-                Error("createBillboardSet: failed to create billboard set '%s'", name);
-                return 0;
-            }
-
-            // Get the BillboardSet NativeClassDef
-            NativeClassDef *bbSetClass = nullptr;
-            if (!vm->tryGetNativeClassDef("BillboardSet", &bbSetClass))
-            {
-                Error("BillboardSet class not found in VM");
-                return 0;
-            }
-
-            Value bbSetValue = vm->makeNativeClassInstance(false);
-            NativeClassInstance *instance = bbSetValue.asNativeClassInstance();
-            instance->klass = bbSetClass;
-            instance->userData = (void *)billboardSet;
-
-            vm->push(bbSetValue);
-            Info("BillboardSet '%s' created", name);
-            return 1;
-        }
-        catch (Ogre::Exception &e)
-        {
-            Error("createBillboardSet failed: %s", e.what());
-            return 0;
-        }
-    }
+  
 
     // ========== BILLBOARD SET METHODS ==========
 
@@ -266,8 +211,7 @@ namespace OgreBillboardBindings
         vm.addNativeMethod(bbSet, "getNumBillboards", bbset_getNumBillboards);
         vm.addNativeMethod(bbSet, "setCastShadows", bbset_setCastShadows);
 
-        // Global functions
-        vm.registerNative("createBillboardSet", createBillboardSet, 3);
+ 
 
         Info("Billboard bindings registered");
     }

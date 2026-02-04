@@ -4,77 +4,7 @@
 
 namespace OgreAnimationStateBindings
 {
-    // getAnimationState(entity, "animationName") - função global
-    int getAnimationState(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("getAnimationState: requires entity and animation name");
-            return 0;
-        }
-
-        NativeClassInstance *entityInstance = args[0].asNativeClassInstance();
-        Ogre::Entity *entity = static_cast<Ogre::Entity *>(entityInstance->userData);
-
-        if (!entity)
-        {
-            Error("getAnimationState: invalid entity");
-            return 0;
-        }
-
-        const char *animName = args[1].asStringChars();
-
-        // Check if animation exists
-        if (!entity->hasAnimationState(animName))
-        {
-            Error("getAnimationState: animation '%s' not found", animName);
-            return 0;
-        }
-
-        Ogre::AnimationState *animState = entity->getAnimationState(animName);
-
-        // Get the AnimationState NativeClassDef
-        NativeClassDef *animStateClass = nullptr;
-        if (!vm->tryGetNativeClassDef("AnimationState", &animStateClass))
-        {
-            Error("AnimationState class not found in VM");
-            return 0;
-        }
-
-        // Create a NativeClassInstance
-        Value animValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = animValue.asNativeClassInstance();
-        instance->klass = animStateClass;
-        instance->userData = (void *)animState;
-
-        vm->push(animValue);
-        return 1;
-    }
-
-    // hasAnimation(entity, "animationName") - verifica se existe
-    int hasAnimation(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            vm->pushBool(false);
-            return 1;
-        }
-
-        NativeClassInstance *entityInstance = args[0].asNativeClassInstance();
-        Ogre::Entity *entity = static_cast<Ogre::Entity *>(entityInstance->userData);
-
-        if (!entity)
-        {
-            vm->pushBool(false);
-            return 1;
-        }
-
-        const char *animName = args[1].asStringChars();
-        bool hasAnim = entity->hasAnimationState(animName);
-
-        vm->pushBool(hasAnim);
-        return 1;
-    }
+    
 
     // ========== ANIMATION STATE METHODS ==========
 
@@ -216,9 +146,6 @@ namespace OgreAnimationStateBindings
         vm.addNativeMethod(animState, "getLength", animState_getLength);
         vm.addNativeMethod(animState, "hasEnded", animState_hasEnded);
 
-        // Global functions
-        vm.registerNative("getAnimationState", getAnimationState, 2);
-        vm.registerNative("hasAnimation", hasAnimation, 2);
 
         Info("AnimationState bindings registered");
     }

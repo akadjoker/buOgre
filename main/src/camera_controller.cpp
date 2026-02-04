@@ -235,28 +235,30 @@ ThirdPersonController::ThirdPersonController(Ogre::SceneNode *cameraNode, Ogre::
      
 }
  
+ 
 
 void ThirdPersonController::update(float deltaTime, int mouseDeltaX, int mouseDeltaY)
 {
     if (!mEnabled || !mCameraNode || !mTargetNode) return;
 
-    Ogre::Vector3 targetPos = mTargetNode->_getDerivedPosition() + (mTargetNode->_getDerivedOrientation() * mOffset);
+    // 1. Pegar posição e rotação do player
+    Ogre::Vector3 playerPos = mTargetNode->_getDerivedPosition();
+    Ogre::Quaternion playerRot = mTargetNode->_getDerivedOrientation();
 
-  // 2. Cálculo da força da mola (Usando as variáveis da tua classe: mSpringStiffness e mSpringDamping)
-    Ogre::Vector3 displacement = targetPos - mCameraNode->getPosition();
-    Ogre::Vector3 springForce = displacement * mSpringStiffness;
+    // 2. Criar offset em local space (X=lateral, Y=altura, Z=distância trás)
+    // INVERSÃO: Z positivo do user vira negativo 
+    Ogre::Vector3 localOffset(mOffset.x, mOffset.y, -mOffset.z);
 
-    // 3. Aplicar amortecimento à velocidade (mVelocity da tua classe)
-    Ogre::Vector3 dampingForce = mVelocity * mSpringDamping;
-    Ogre::Vector3 acceleration = springForce - dampingForce;
+    // 3. Transformar offset para world space
+    Ogre::Vector3 worldOffset = playerRot * localOffset;
 
-    // 4. Integrar física básica
-    mVelocity += acceleration *  deltaTime;
-    mCameraNode->translate(mVelocity * deltaTime   , Ogre::Node::TS_WORLD);
+    // 4. Posicionar câmera
+    mCameraNode->setPosition(playerPos + worldOffset);
 
-    // 5. Sempre olhar para o player
-    mCameraNode->lookAt(mTargetNode->_getDerivedPosition() +  mOrientationOffset,  Ogre::Node::TS_WORLD);
-   
+    // 5. Câmera olha OPOSTO ao player (+180°)
+    Ogre::Radian playerYaw = playerRot.getYaw();
+    Ogre::Quaternion cameraRot(playerYaw + Ogre::Radian(Ogre::Math::PI), Ogre::Vector3::UNIT_Y);
+    mCameraNode->setOrientation(cameraRot);
 }
 
  
@@ -264,3 +266,58 @@ void ThirdPersonController::update(float deltaTime, int mouseDeltaX, int mouseDe
  
 
 } // namespace CameraControllers
+
+
+
+
+// void ThirdPersonController::update(float deltaTime, int mouseDeltaX, int mouseDeltaY)
+// {
+//     if (!mEnabled || !mCameraNode || !mTargetNode) return;
+
+//     // 1. Obter rotação do player (yaw)
+//     Ogre::Quaternion playerOrientation = mTargetNode->_getDerivedOrientation();
+//     Ogre::Radian playerYaw = playerOrientation.getYaw();
+
+//     // 2. Calcular posição desejada da câmera (atrás do player)
+//     // Pegar direção "para trás" do player (oposta à direção Z)
+//     Ogre::Vector3 playerForward = playerOrientation.zAxis();  // Direção que o player está olhando
+//     Ogre::Vector3 backwards = -playerForward;                  // Direção oposta (atrás)
+
+//     // Posição da câmera = posição do player + (atrás × distância) + (cima × altura)
+//     Ogre::Vector3 targetPos = mTargetNode->_getDerivedPosition()
+//                             + backwards * mOffset.z              // Distância atrás
+//                             + Ogre::Vector3::UNIT_Y * mOffset.y  // Altura
+//                             + playerOrientation.xAxis() * mOffset.x; // Offset lateral
+
+//     // 3. Cálculo da força da mola para posição
+//     Ogre::Vector3 displacement = targetPos - mCameraNode->getPosition();
+//     Ogre::Vector3 springForce = displacement * mSpringStiffness;
+
+//     // 4. Aplicar amortecimento à velocidade
+//     Ogre::Vector3 dampingForce = mVelocity * mSpringDamping;
+//     Ogre::Vector3 acceleration = springForce - dampingForce;
+
+//     // 5. Integrar física básica (movimento suave)
+//     mVelocity += acceleration * deltaTime;
+//     mCameraNode->translate(mVelocity * deltaTime, Ogre::Node::TS_WORLD);
+
+//     // 6. Rotação suave para alinhar com o player
+//     Ogre::Quaternion currentOrientation = mCameraNode->getOrientation();
+//     Ogre::Radian currentYaw = currentOrientation.getYaw();
+
+//     // Interpolar suavemente entre rotação atual e rotação do player
+//     float rotationSpeed = 5.0f; // Velocidade de rotação suave
+//     Ogre::Radian angleDiff = playerYaw - currentYaw;
+
+//     // Normalizar o ângulo para -PI a PI
+//     while (angleDiff.valueRadians() > Ogre::Math::PI)
+//         angleDiff = Ogre::Radian(angleDiff.valueRadians() - Ogre::Math::TWO_PI);  // SUBTRAIR!
+//     while (angleDiff.valueRadians() < -Ogre::Math::PI)
+//         angleDiff = Ogre::Radian(angleDiff.valueRadians() + Ogre::Math::TWO_PI);  // SOMAR!
+
+//     Ogre::Radian newYaw = currentYaw + angleDiff * rotationSpeed * deltaTime;
+
+//     // Aplicar apenas rotação no eixo Y (yaw), mantendo pitch e roll zerados
+//     Ogre::Quaternion newOrientation(newYaw, Ogre::Vector3::UNIT_Y);
+//     mCameraNode->setOrientation(newOrientation);
+// }

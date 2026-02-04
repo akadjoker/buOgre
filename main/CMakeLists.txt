@@ -51,6 +51,7 @@ add_executable(main   ${SOURCES})
 find_package(OGRE REQUIRED COMPONENTS RTShaderSystem Overlay  Terrain)
 
 find_package(SDL2 REQUIRED)
+find_package(OpenGL REQUIRED)
 
 target_include_directories(main PRIVATE
     ${SDL2_INCLUDE_DIRS}
@@ -65,8 +66,8 @@ if(OGRE_FOUND)
     OgreMain
     OgreRTShaderSystem
     OgreOverlay
- 
     OgreTerrain
+    OpenGL::GL
       ${SDL2_LIBRARIES}
 )
     

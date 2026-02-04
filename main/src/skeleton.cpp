@@ -7,92 +7,7 @@
 
 namespace OgreSkeletonBindings
 {
-    // getSkeleton(entity) - global function
-    int getSkeleton(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 1)
-        {
-            Error("getSkeleton: requires entity");
-            return 0;
-        }
-
-        NativeClassInstance *entityInstance = args[0].asNativeClassInstance();
-        Ogre::Entity *entity = static_cast<Ogre::Entity *>(entityInstance->userData);
-
-        if (!entity || !entity->hasSkeleton())
-        {
-            Error("getSkeleton: entity has no skeleton");
-            vm->pushNil();
-            return 1;
-        }
-
-        Ogre::SkeletonInstance *skeleton = entity->getSkeleton();
-
-        NativeClassDef *skelClass = nullptr;
-        if (!vm->tryGetNativeClassDef("Skeleton", &skelClass))
-        {
-            Error("Skeleton class not found in VM");
-            vm->pushNil();
-            return 1;
-        }
-
-        Value skelValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = skelValue.asNativeClassInstance();
-        instance->klass = skelClass;
-        instance->userData = (void *)skeleton;
-
-        vm->push(skelValue);
-        return 1;
-    }
-
-    // getBone(skeleton, boneName) - global function
-    int getBone(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("getBone: requires skeleton and bone name");
-            vm->pushNil();
-            return 1;
-        }
-
-        NativeClassInstance *skelInstance = args[0].asNativeClassInstance();
-        Ogre::SkeletonInstance *skeleton = static_cast<Ogre::SkeletonInstance *>(skelInstance->userData);
-
-        if (!skeleton)
-        {
-            vm->pushNil();
-            return 1;
-        }
-
-        const char *boneName = args[1].asStringChars();
-
-        try
-        {
-            Ogre::Bone *bone = skeleton->getBone(boneName);
-
-            NativeClassDef *boneClass = nullptr;
-            if (!vm->tryGetNativeClassDef("Bone", &boneClass))
-            {
-                Error("Bone class not found in VM");
-                vm->pushNil();
-                return 1;
-            }
-
-            Value boneValue = vm->makeNativeClassInstance(false);
-            NativeClassInstance *instance = boneValue.asNativeClassInstance();
-            instance->klass = boneClass;
-            instance->userData = (void *)bone;
-
-            vm->push(boneValue);
-            return 1;
-        }
-        catch (Ogre::Exception &e)
-        {
-            Error("getBone failed: %s", e.what());
-            vm->pushNil();
-            return 1;
-        }
-    }
+    
 
     // ========== SKELETON METHODS ==========
 
@@ -260,72 +175,7 @@ namespace OgreSkeletonBindings
         return 0;
     }
 
-    // ========== ENTITY BONE ATTACHMENT ==========
-
-    // attachObjectToBone(entity, boneName, object)
-    int attachObjectToBone(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 3)
-        {
-            Error("attachObjectToBone: requires entity, boneName, and object");
-            return 0;
-        }
-
-        NativeClassInstance *entityInstance = args[0].asNativeClassInstance();
-        Ogre::Entity *entity = static_cast<Ogre::Entity *>(entityInstance->userData);
-
-        if (!entity)
-        {
-            Error("attachObjectToBone: invalid entity");
-            return 0;
-        }
-
-        const char *boneName = args[1].asStringChars();
-
-        NativeClassInstance *objectInstance = args[2].asNativeClassInstance();
-        Ogre::MovableObject *object = static_cast<Ogre::MovableObject *>(objectInstance->userData);
-
-        if (!object)
-        {
-            Error("attachObjectToBone: invalid object");
-            return 0;
-        }
-
-        try
-        {
-            entity->attachObjectToBone(boneName, object);
-            Info("Object attached to bone '%s'", boneName);
-        }
-        catch (Ogre::Exception &e)
-        {
-            Error("attachObjectToBone failed: %s", e.what());
-        }
-
-        return 0;
-    }
-
-    // detachObjectFromBone(entity, object)
-    int detachObjectFromBone(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 2)
-        {
-            Error("detachObjectFromBone: requires entity and object");
-            return 0;
-        }
-
-        NativeClassInstance *entityInstance = args[0].asNativeClassInstance();
-        Ogre::Entity *entity = static_cast<Ogre::Entity *>(entityInstance->userData);
-
-        NativeClassInstance *objectInstance = args[1].asNativeClassInstance();
-        Ogre::MovableObject *object = static_cast<Ogre::MovableObject *>(objectInstance->userData);
-
-        if (entity && object)
-        {
-            entity->detachObjectFromBone(object);
-        }
-
-        return 0;
-    }
+  
 
     void registerAll(Interpreter &vm)
     {
@@ -360,14 +210,6 @@ namespace OgreSkeletonBindings
         vm.addNativeMethod(bone, "roll", bone_roll);
         vm.addNativeMethod(bone, "setManuallyControlled", bone_setManuallyControlled);
         vm.addNativeMethod(bone, "resetToInitialState", bone_resetToInitialState);
-
-        // Global functions
-        vm.registerNative("getSkeleton", getSkeleton, 1);
-        vm.registerNative("getBone", getBone, 2);
-        vm.registerNative("attachObjectToBone", attachObjectToBone, 3);
-        vm.registerNative("detachObjectFromBone", detachObjectFromBone, 2);
-
-        Info("Skeleton/Bone bindings registered");
     }
 
 } // namespace OgreSkeletonBindings

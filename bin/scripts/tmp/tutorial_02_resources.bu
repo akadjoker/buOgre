@@ -1,0 +1,375 @@
+// ============================================================
+// TUTORIAL 2 - SISTEMA DE RECURSOS
+// Aprenda: Resource Groups, Materiais, Modelos, Texturas
+// ============================================================
+
+include "keys.bu";
+
+// ============================================================
+// PASSO 1: Configurar Resource Groups
+// ============================================================
+
+def step1_resource_groups()
+{
+    print("=== Tutorial 2.1 - Resource Groups ===");
+
+    CreateEngine(1280, 720, "Tutorial - Resources", 1, false, true);
+
+    // ========== SISTEMA DE RECURSOS ==========
+    print("Configurando resource groups...");
+
+    // Criar grupo custom
+    createResourceGroup("MyAssets");
+
+    // Adicionar locais ao grupo General (padrão)
+    addResourceLocation("./media", "FileSystem", "General");
+    addResourceLocation("./media/materials/scripts", "FileSystem", "General");
+    addResourceLocation("./media/materials/textures", "FileSystem", "General");
+    addResourceLocation("./media/models", "FileSystem", "General");
+
+    // Adicionar locais ao grupo custom
+    // addResourceLocation("./my_models", "FileSystem", "MyAssets");
+    // addResourceLocation("./assets.zip", "Zip", "MyAssets");
+
+    // Inicializar grupos
+    initialiseAllResourceGroups();
+
+    print("Resources loaded successfully!");
+    print("Grupos disponíveis:");
+    print("  - General (padrão)");
+    print("  - MyAssets (custom)");
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    var rootNode = scene.getRoot();
+
+    // Câmera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 5, 15);
+
+    var viewport = Viewport(cam);
+
+    print("Resource groups configurados!");
+
+    while(EngineCanUpdate())
+    {
+        UpdateEngine(getDeltaTime());
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 2: Criar e usar materiais
+// ============================================================
+
+def step2_create_materials()
+{
+    print("=== Tutorial 2.2 - Criar Materiais ===");
+
+    CreateEngine(1280, 720, "Tutorial - Materials", 1, false, true);
+
+    addResourceLocation("./media", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = Scene();
+    scene.setAmbientLight(0.3, 0.3, 0.3);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Luz
+    var light = scene.createLight("Sun", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    light.setSpecular(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Chão
+    CreatePlane("ground", 1000, 1000, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== CRIAR MATERIAIS CUSTOMIZADOS ==========
+
+    print("Criando materiais...");
+
+    // Material 1: Metal brilhante
+    var metalMat = createMaterial("MetalMaterial");
+    metalMat.setAmbient(0.2, 0.2, 0.2);
+    metalMat.setDiffuse(0.7, 0.7, 0.8, 1.0);
+    metalMat.setSpecular(1.0, 1.0, 1.0, 128.0);  // Muito brilhante
+    print("✓ Material 'MetalMaterial' criado");
+
+    // Material 2: Plástico vermelho
+    var plasticMat = createMaterial("RedPlastic");
+    plasticMat.setAmbient(0.3, 0.0, 0.0);
+    plasticMat.setDiffuse(0.9, 0.1, 0.1, 1.0);
+    plasticMat.setSpecular(0.5, 0.5, 0.5, 32.0);
+    print("✓ Material 'RedPlastic' criado");
+
+    // Material 3: Emissivo (brilha no escuro)
+    var glowMat = createMaterial("GlowMaterial");
+    glowMat.setDiffuse(0.2, 0.8, 1.0, 1.0);
+    glowMat.setEmissive(0.1, 0.4, 0.5);  // Glow ciano
+    print("✓ Material 'GlowMaterial' criado");
+
+    // ========== APLICAR MATERIAIS A OBJETOS ==========
+
+    // Esfera metálica
+    var sphere1Mesh = createSphere(scene, "MetalSphere", 2.0, 32, 32);
+    var sphere1 = scene.createEntity(sphere1Mesh);
+    sphere1.setMaterialName("MetalMaterial");
+    sphere1.castShadows = true;
+
+    var sphere1Node = rootNode.createChild();
+    sphere1Node.attachObject(sphere1);
+    sphere1Node.setPosition(-5, 3, 0);
+
+    // Cubo plástico
+    var cubeMesh = createCube(scene, "PlasticCube", 3.0);
+    var cube = scene.createEntity(cubeMesh);
+    cube.setMaterialName("RedPlastic");
+    cube.castShadows = true;
+
+    var cubeNode = rootNode.createChild();
+    cubeNode.attachObject(cube);
+    cubeNode.setPosition(0, 3, 0);
+
+    // Cilindro brilhante
+    var cylMesh = createCylinder(scene, "GlowCyl", 1.5, 5.0, 24);
+    var cyl = scene.createEntity(cylMesh);
+    cyl.setMaterialName("GlowMaterial");
+    cyl.castShadows = false;
+
+    var cylNode = rootNode.createChild();
+    cylNode.attachObject(cyl);
+    cylNode.setPosition(5, 3, 0);
+
+    // Câmera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 10, 20);
+    cameraNode.lookAt(0, 3, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.1, 0.1, 0.15);
+
+    print("Materiais aplicados! Veja as diferenças:");
+    print("  - Esquerda: Metal (muito brilhante)");
+    print("  - Centro: Plástico vermelho");
+    print("  - Direita: Emissivo (glow)");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Rodar objetos
+        sphere1Node.yaw(30.0 * deltaTime);
+        cubeNode.yaw(25.0 * deltaTime);
+        cylNode.yaw(35.0 * deltaTime);
+
+        // Rodar câmera
+        rotation = rotation + 10.0 * deltaTime;
+        var rad = rotation * 0.0174533;
+        cameraNode.setPosition(sin(rad) * 25.0, 10, cos(rad) * 25.0);
+        cameraNode.lookAt(0, 3, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 3: Carregar modelos externos
+// ============================================================
+
+def step3_load_models()
+{
+    print("=== Tutorial 2.3 - Carregar Modelos ===");
+
+    CreateEngine(1280, 720, "Tutorial - Models", 1, false, true);
+
+    // Recursos
+    addResourceLocation("./media", "FileSystem", "General");
+    addResourceLocation("./media/models", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = Scene();
+    scene.setAmbientLight(0.5, 0.5, 0.5);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Luz
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Chão
+    CreatePlane("ground", 1500, 1500, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== CARREGAR MODELO OGRE ==========
+
+    print("Carregando modelo ogrehead.mesh...");
+
+    var ogreHead = scene.createEntity("ogrehead.mesh");
+    ogreHead.castShadows = true;
+
+    var ogreNode = rootNode.createChild();
+    ogreNode.attachObject(ogreHead);
+    ogreNode.setPosition(-5, 5, 0);
+    ogreNode.setScale(2, 2, 2);
+
+    print("✓ ogrehead.mesh carregado!");
+
+    // ========== CARREGAR SINBAD (se disponível) ==========
+
+    print("Tentando carregar Sinbad.mesh...");
+
+    // Nota: Sinbad pode não estar disponível em todos os setups
+    // var sinbad = scene.createEntity("Sinbad.mesh");
+    // var sinbadNode = rootNode.createChild();
+    // sinbadNode.attachObject(sinbad);
+    // sinbadNode.setPosition(5, 0, 0);
+
+    // Por enquanto, criar esfera de placeholder
+    var sphereMesh = createSphere(scene, "Placeholder", 2.0, 24, 24);
+    var sphere = scene.createEntity(sphereMesh);
+    var sphereNode = rootNode.createChild();
+    sphereNode.attachObject(sphere);
+    sphereNode.setPosition(5, 3, 0);
+
+    // Câmera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(0, 8, 20);
+    cameraNode.lookAt(0, 3, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.2, 0.3, 0.4);
+
+    print("Modelos carregados!");
+
+    var rotation = 0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+
+        // Rodar modelos
+        ogreNode.yaw(20.0 * deltaTime);
+        sphereNode.yaw(30.0 * deltaTime);
+
+        // Câmera orbital
+        rotation = rotation + 15.0 * deltaTime;
+        var rad = rotation * 0.0174533;
+        cameraNode.setPosition(sin(rad) * 25.0, 8, cos(rad) * 25.0);
+        cameraNode.lookAt(0, 3, 0, 2);
+
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// PASSO 4: Material com textura (se disponível)
+// ============================================================
+
+def step4_textured_materials()
+{
+    print("=== Tutorial 2.4 - Materiais com Textura ===");
+
+    CreateEngine(1280, 720, "Tutorial - Textures", 1, false, true);
+
+    addResourceLocation("./media", "FileSystem", "General");
+    addResourceLocation("./media/materials/textures", "FileSystem", "General");
+    initialiseAllResourceGroups();
+
+    var scene = Scene();
+    scene.setAmbientLight(0.4, 0.4, 0.4);
+    scene.setShadowTechnique(1);
+    var rootNode = scene.getRoot();
+
+    // Luz
+    var light = scene.createLight("MainLight", 1);
+    light.setDiffuse(1.0, 1.0, 1.0);
+    var lightNode = rootNode.createChild();
+    lightNode.attachObject(light);
+    lightNode.setPosition(200, 300, 200);
+
+    // Chão
+    CreatePlane("ground", 1000, 1000, 20, 20, true, 1, 10.0, 10.0);
+    var groundEntity = scene.createEntity("ground");
+    var groundNode = rootNode.createChild();
+    groundNode.attachObject(groundEntity);
+
+    // ========== CRIAR MATERIAL COM TEXTURA ==========
+
+    print("Criando material com textura...");
+
+    var texMat = createMaterial("TexturedMaterial");
+    texMat.setDiffuse(1.0, 1.0, 1.0, 1.0);
+    // texMat.setTexture("GrassFloor.png", 0);  // Descomentar se tiver textura
+
+    print("✓ Material criado");
+
+    // Cubo com material
+    var cubeMesh = createCube(scene, "TexCube", 4.0);
+    var cube = scene.createEntity(cubeMesh);
+    cube.setMaterialName("TexturedMaterial");
+    cube.castShadows = true;
+
+    var cubeNode = rootNode.createChild();
+    cubeNode.attachObject(cube);
+    cubeNode.setPosition(0, 2, 0);
+
+    // Câmera
+    var cam = scene.createCamera("MainCam");
+    var cameraNode = rootNode.createChild();
+    cameraNode.attachObject(cam);
+    cameraNode.setPosition(8, 6, 12);
+    cameraNode.lookAt(0, 2, 0, 2);
+
+    var viewport = Viewport(cam);
+    viewport.setBackgroundColor(0.3, 0.4, 0.5);
+
+    print("Material com textura aplicado!");
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        cubeNode.yaw(20.0 * deltaTime);
+        UpdateEngine(deltaTime);
+    }
+
+    ReleaseEngine();
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+
+def main()
+{
+    print("=== TUTORIAL 2 - SISTEMA DE RECURSOS ===");
+    print("");
+
+    // Executar passo mais completo
+    step2_create_materials();
+}
+
+ 

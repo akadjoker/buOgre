@@ -1,5 +1,5 @@
 #include "bindings.hpp"
-
+#include "lensflare.hpp"
  
 
 // ============== OGRE VECTOR3 BINDINGS ==============
@@ -363,9 +363,9 @@ namespace OgreBindings
         OgreBillboardBindings::registerAll(vm);
  
         OgreSkeletonBindings::registerAll(vm);
+        OgreLensFlareBindings::registerAll(vm);
 
-        Info("Ogre3D bindings registered");
+     
     }
 
 } // namespace OgreBindings
-

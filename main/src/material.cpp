@@ -296,11 +296,371 @@ namespace OgreMaterialBindings
         return 0;
     }
 
+    // setFragmentParamInt(name, value)
+    int material_setFragmentParamInt(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 2) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        int value = (int)args[1].asNumber();
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasFragmentProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getFragmentProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFragmentParamInt failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setVertexParamInt(name, value)
+    int material_setVertexParamInt(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 2) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        int value = (int)args[1].asNumber();
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasVertexProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getVertexProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setVertexParamInt failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setFragmentParamFloat(name, value)
+    int material_setFragmentParamFloat(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 2) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        float value = (float)args[1].asNumber();
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasFragmentProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getFragmentProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFragmentParamFloat failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setVertexParamFloat(name, value)
+    int material_setVertexParamFloat(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 2) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        float value = (float)args[1].asNumber();
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasVertexProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getVertexProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setVertexParamFloat failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setFragmentParamVec2(name, x, y)
+    int material_setFragmentParamVec2(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 3) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector2 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasFragmentProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getFragmentProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFragmentParamVec2 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setFragmentParamVec3(name, x, y, z)
+    int material_setFragmentParamVec3(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 4) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector3 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber(),
+            (float)args[3].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasFragmentProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getFragmentProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFragmentParamVec3 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setFragmentParamVec4(name, x, y, z, w)
+    int material_setFragmentParamVec4(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector4 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber(),
+            (float)args[3].asNumber(),
+            (float)args[4].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasFragmentProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getFragmentProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setFragmentParamVec4 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setVertexParamVec2(name, x, y)
+    int material_setVertexParamVec2(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 3) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector2 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasVertexProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getVertexProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setVertexParamVec2 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setVertexParamVec3(name, x, y, z)
+    int material_setVertexParamVec3(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 4) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector3 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber(),
+            (float)args[3].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasVertexProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getVertexProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setVertexParamVec3 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+    // setVertexParamVec4(name, x, y, z, w)
+    int material_setVertexParamVec4(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 5) return 0;
+
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (!material) return 0;
+
+        const char *paramName = args[0].asStringChars();
+        Ogre::Vector4 value(
+            (float)args[1].asNumber(),
+            (float)args[2].asNumber(),
+            (float)args[3].asNumber(),
+            (float)args[4].asNumber()
+        );
+
+        try
+        {
+            Ogre::Technique *tech = material->getTechnique(0);
+            if (!tech) return 0;
+            Ogre::Pass *pass = tech->getPass(0);
+            if (!pass || !pass->hasVertexProgram()) return 0;
+
+            Ogre::GpuProgramParametersSharedPtr params = pass->getVertexProgramParameters();
+            if (!params.isNull())
+            {
+                params->setNamedConstant(paramName, value);
+            }
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("setVertexParamVec4 failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
     // compile()
     int material_compile(Interpreter *vm, void *data, int argCount, Value *args)
     {
         Ogre::Material *material = static_cast<Ogre::Material *>(data);
         if (material) material->compile();
+        return 0;
+    }
+
+    // load()
+    int material_load(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (material) material->load();
+        return 0;
+    }
+
+    // reload()
+    int material_reload(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        Ogre::Material *material = static_cast<Ogre::Material *>(data);
+        if (material) material->reload();
         return 0;
     }
 
@@ -369,7 +729,19 @@ namespace OgreMaterialBindings
         vm.addNativeMethod(material, "setDepthWrite", material_setDepthWrite);
         vm.addNativeMethod(material, "setLightingEnabled", material_setLightingEnabled);
         vm.addNativeMethod(material, "setReceiveShadows", material_setReceiveShadows);
+        vm.addNativeMethod(material, "setFragmentParamInt", material_setFragmentParamInt);
+        vm.addNativeMethod(material, "setVertexParamInt", material_setVertexParamInt);
+        vm.addNativeMethod(material, "setFragmentParamFloat", material_setFragmentParamFloat);
+        vm.addNativeMethod(material, "setVertexParamFloat", material_setVertexParamFloat);
+        vm.addNativeMethod(material, "setFragmentParamVec2", material_setFragmentParamVec2);
+        vm.addNativeMethod(material, "setFragmentParamVec3", material_setFragmentParamVec3);
+        vm.addNativeMethod(material, "setFragmentParamVec4", material_setFragmentParamVec4);
+        vm.addNativeMethod(material, "setVertexParamVec2", material_setVertexParamVec2);
+        vm.addNativeMethod(material, "setVertexParamVec3", material_setVertexParamVec3);
+        vm.addNativeMethod(material, "setVertexParamVec4", material_setVertexParamVec4);
         vm.addNativeMethod(material, "compile", material_compile);
+        vm.addNativeMethod(material, "load", material_load);
+        vm.addNativeMethod(material, "reload", material_reload);
         vm.addNativeMethod(material, "clone", material_clone);
 
         // Global functions

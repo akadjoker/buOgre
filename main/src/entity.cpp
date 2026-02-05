@@ -148,11 +148,13 @@ namespace OgreEntityBindings
         Ogre::Entity *entity = static_cast<Ogre::Entity *>(data);
         if (!entity)
         {
+            Error("attachObjectToBone: invalid entity");
             return 0;
         }
 
         if (argCount < 2)
         {
+            Error("attachObjectToBone: requires bone name and object arguments");
             return 0;
         }
 
@@ -182,6 +184,87 @@ namespace OgreEntityBindings
         try
         {
             entity->attachObjectToBone(boneName, object);
+            Info("Object attached to bone '%s'", boneName);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("attachObjectToBone failed: %s", e.what());
+        }
+
+        return 0;
+    }
+
+
+     int entity_attachObjectToBoneEx(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        Ogre::Entity *entity = static_cast<Ogre::Entity *>(data);
+        if (!entity)
+        {
+            Error("attachObjectToBone: invalid entity");
+            return 0;
+        }
+
+        if (argCount < 4)
+        {
+            Error("attachObjectToBoneEx: requires bone name, object, offsetOrientation, offsetPosition arguments");
+            return 0;
+        }
+
+        if (!entity->hasSkeleton())
+        {
+            Error("attachObjectToBone: Entity has no skeleton");
+            return 0;
+        }
+        if (!args[0].isString())
+        {
+            Error("attachObjectToBone: First argument must be a bone name string");
+            return 0;
+        }   
+        if ( !args[1].isNativeClassInstance() )
+        {
+            Error("attachObjectToBone: Argument is not a NativeClassInstance");
+            return 0;
+        }
+        if (!args[2].isNativeClassInstance() )
+        {
+            Error("attachObjectToBone: Third argument is not a NativeClassInstance (offsetOrientation)");
+            return 0;
+        }
+        if (!args[3].isNativeClassInstance() )
+        {
+            Error("attachObjectToBone: Fourth argument is not a NativeClassInstance (offsetPosition)");
+            return 0;
+        }
+        const char *boneName = args[0].asStringChars();
+
+        NativeClassInstance *objectInstance = args[1].asNativeClassInstance();
+        Ogre::MovableObject *object = static_cast<Ogre::MovableObject *>(objectInstance->userData);
+
+        Ogre::Quaternion offsetOrientation = Ogre::Quaternion::IDENTITY;
+        Ogre::Vector3 offsetPosition = Ogre::Vector3::ZERO;
+
+        NativeClassInstance *orientInstance = args[2].asNativeClassInstance();
+        Ogre::Quaternion *orientQuat = static_cast<Ogre::Quaternion *>(orientInstance->userData);
+        if (orientQuat)
+        {
+            offsetOrientation = *orientQuat;
+        }
+
+        NativeClassInstance *posInstance = args[3].asNativeClassInstance();
+        Ogre::Vector3 *posVec = static_cast<Ogre::Vector3 *>(posInstance->userData);
+        if (posVec)
+        {
+            offsetPosition = *posVec;
+        }
+
+         
+
+
+ 
+
+        try
+        {
+            entity->attachObjectToBone(boneName, object, offsetOrientation, offsetPosition);
             Info("Object attached to bone '%s'", boneName);
         }
         catch (Ogre::Exception &e)
@@ -327,6 +410,7 @@ namespace OgreEntityBindings
         vm.addNativeMethod(ent, "getAnimationState", entity_getAnimationState);
         vm.addNativeMethod(ent, "hasAnimation", entity_hasAnimation);
         vm.addNativeMethod(ent, "attachObjectToBone", entity_attachObjectToBone);
+        vm.addNativeMethod(ent, "attachObjectToBoneEx", entity_attachObjectToBoneEx);
         vm.addNativeMethod(ent, "detachObjectFromBone", entity_detachObjectFromBone);
         vm.addNativeMethod(ent, "getSkeleton", entity_getSkeleton);
         vm.addNativeMethod(ent, "getBone", entity_getBone);

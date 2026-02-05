@@ -478,8 +478,9 @@ namespace ProceduralMesh
                 int current = z * (widthSegments + 1) + x;
                 int next = current + widthSegments + 1;
 
-                manual->triangle(current, current + 1, next);
-                manual->triangle(current + 1, next + 1, next);
+                // Winding order adjusted to match +Y normals
+                manual->triangle(current, next, current + 1);
+                manual->triangle(current + 1, next, next + 1);
             }
         }
 

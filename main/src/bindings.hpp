@@ -162,3 +162,8 @@ namespace OgreSkeletonBindings
 {
     void registerAll(Interpreter &vm);
 }
+
+namespace OgreLensFlareBindings
+{
+    void registerAll(Interpreter &vm);
+}

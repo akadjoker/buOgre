@@ -8,38 +8,46 @@ namespace OgreCoreBindings
 {
     
      // void *light_ctor(Interpreter *vm, int argCount, Value *args)
-    void* viewport_ctor(Interpreter *vm, int argCount, Value *args)
-    {
-        if (!mWindow)
-        {
-            Error("Viewport: window not created yet");
-            return nullptr;
-        }
+    // void* viewport_ctor(Interpreter *vm, int argCount, Value *args)
+    // {
+    //     if (!mWindow)
+    //     {
+    //         Error("Viewport: window not created yet");
+    //         return nullptr;
+    //     }
 
-        NativeClassInstance *camInstance = args[0].asNativeClassInstance();
+    //     NativeClassInstance *camInstance = args[0].asNativeClassInstance();
 
-        Ogre::Camera *cam = static_cast<Ogre::Camera *>(camInstance->userData);
-        if (!cam)
-        {
-            Error("Viewport: camera not provided");
-            return nullptr;
-        }
+    //     Ogre::Camera *cam = static_cast<Ogre::Camera *>(camInstance->userData);
+    //     if (!cam)
+    //     {
+    //         Error("Viewport: camera not provided");
+    //         return nullptr;
+    //     }
 
-        Ogre::Viewport* vp = mWindow->addViewport(cam);
-        if (!vp)
-        {
-            Error("Viewport: no viewport found");
-            return nullptr;
-        }
-        Info("Viewport constructed");
-        return vp;
-    }
+    //     int zOrder = 0;
 
-    void viewport_dtor(Interpreter *vm, void *data)
-    {
+    //     if( argCount >= 2)
+    //     {
+    //         zOrder = (int)args[1].asNumber();
+    //     }
+
+
+    //     Ogre::Viewport* vp = mWindow->addViewport(cam, zOrder);
+    //     if (!vp)
+    //     {
+    //         Error("Viewport: no viewport found");
+    //         return nullptr;
+    //     }
+    //     Info("Viewport constructed");
+    //     return vp;
+    // }
+
+    // void viewport_dtor(Interpreter *vm, void *data)
+    // {
         
         
-    }
+    // }
 
     int viewport_setBackgroundColour(Interpreter *vm, void *data, int argCount, Value *args)
     {
@@ -213,17 +221,84 @@ namespace OgreCoreBindings
         return 0;
     }
 
-//    void setBackgroundColour(const ColourValue& colour) { mBackColour = colour; }
-// void setDepthClear( float depth ) { mDepthClearValue = depth; }
+    int viewport_setDimensions(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 4)
+        {
+            Error("setDimensions requires 4 arguments (left, top, width, height)");
+            return 0;
+        }
+
+        Ogre::Viewport* vp = static_cast<Ogre::Viewport *>(data);
+        float left = (float)args[0].asNumber();
+        float top = (float)args[1].asNumber();
+        float width = (float)args[2].asNumber();
+        float height = (float)args[3].asNumber();
+
+        vp->setDimensions(left, top, width, height);
+        return 0;
+    }
+
+    // Factory function: CreateViewPort(camera, zOrder)
+    int createViewPort(Interpreter *vm,  int argCount, Value *args)
+    {
+        if (!mWindow)
+        {
+            Error("CreateViewPort: window not created yet");
+            vm->pushNil();
+            return 1;
+        }
+        if (argCount < 1)
+        {
+            Error("CreateViewPort: requires at least camera argument");
+            vm->pushNil();
+            return 1;
+        }
+        NativeClassInstance *camInstance = args[0].asNativeClassInstance();
+        Ogre::Camera *cam = static_cast<Ogre::Camera *>(camInstance->userData);
+        if (!cam)
+        {
+            Error("CreateViewPort: camera not provided");
+            vm->pushNil();
+            return 1;
+        }
+        int zOrder = 0;
+        if( argCount >= 2)
+        {
+            zOrder = (int)args[1].asNumber();
+        }
+        Ogre::Viewport* vp = mWindow->addViewport(cam, zOrder);
+        if (!vp)
+        {
+            Error("CreateViewPort: no viewport found");
+            vm->pushNil();
+            return 1;
+        }
+        
+        Value vpValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *vpInst = vpValue.asNativeClassInstance();
+        NativeClassDef *vpClass = nullptr;
+        if (!vm->tryGetNativeClassDef("Viewport", &vpClass))
+        {
+            Error("Viewport class not found in VM");
+            vm->pushNil();
+            return 1;
+        }
+        vpInst->klass = vpClass;
+        vpInst->userData = (void *)vp;
+        vm->push(vpValue);
+        return 1;
+    }
+
 
 
      void registerAll(Interpreter &vm)
     {
         NativeClassDef *lt = vm.registerNativeClass(
         "Viewport",
-            viewport_ctor,
+            nullptr,
             nullptr,  // destructor
-            1,      // properties: posX, posY, posZ
+            0,      // properties: posX, posY, posZ
             false
         );
 
@@ -232,7 +307,10 @@ namespace OgreCoreBindings
             vm.addNativeMethod(lt, "addCompositor", addCompositor);
             vm.addNativeMethod(lt, "setCompositorEnabled", setCompositorEnabled);
             vm.addNativeMethod(lt, "removeCompositor", removeCompositor);
+            vm.addNativeMethod(lt, "setDimensions", viewport_setDimensions);
 
+
+          vm.registerNative("CreateViewPort", createViewPort, -1);
 
         // vm.addNativeMethod(lt, "setPosition", light_setPosition);
         // vm.addNativeMethod(lt, "setDiffuse", light_setDiffuse);

@@ -29,7 +29,7 @@ namespace OgreCameraBindings
 
         
 
-        Info("Camera '%s' created", name);
+      
         return cam;
     }
 
@@ -109,6 +109,9 @@ namespace OgreCameraBindings
         return 1;
     }
 
+
+   
+
     void registerAll(Interpreter &vm)
     {
         NativeClassDef *cam = vm.registerNativeClass(
@@ -123,9 +126,8 @@ namespace OgreCameraBindings
          vm.addNativeMethod(cam, "setFOV", camera_setFOV);
          vm.addNativeMethod(cam, "setNearClip", camera_setNearClip);
          vm.addNativeMethod(cam, "setFarClip", camera_setFarClip);
-        vm.addNativeMethod(cam, "setAutoAspectRatio", camera_setAutoAspectRatio);
- 
-        vm.addNativeMethod(cam, "getParentNode", camera_getParentNode);
+         vm.addNativeMethod(cam, "setAutoAspectRatio", camera_setAutoAspectRatio);
+         vm.addNativeMethod(cam, "getParentNode", camera_getParentNode);
 
         
 

@@ -1,180 +1,74 @@
-18:03:52: Creating resource group General
-18:03:52: Creating resource group OgreInternal
-18:03:52: Creating resource group OgreAutodetect
-18:03:52: SceneManagerFactory for type 'DefaultSceneManager' registered.
-18:03:52: Registering ResourceManager for type Material
-18:03:52: Registering ResourceManager for type Mesh
-18:03:52: Registering ResourceManager for type Skeleton
-18:03:52: MovableObjectFactory for type 'ParticleSystem' registered.
-18:03:52: ArchiveFactory for type 'FileSystem' registered
-18:03:52: ArchiveFactory for type 'Zip' registered
-18:03:52: ArchiveFactory for type 'EmbeddedZip' registered
-18:03:52: DDS codec registering
-18:03:52: ETC codec registering
-18:03:52: ASTC codec registering
-18:03:52: Registering ResourceManager for type GpuProgram
-18:03:52: Registering ResourceManager for type Compositor
-18:03:52: MovableObjectFactory for type 'Entity' registered.
-18:03:52: MovableObjectFactory for type 'Light' registered.
-18:03:52: MovableObjectFactory for type 'BillboardSet' registered.
-18:03:52: MovableObjectFactory for type 'ManualObject' registered.
-18:03:52: MovableObjectFactory for type 'BillboardChain' registered.
-18:03:52: MovableObjectFactory for type 'RibbonTrail' registered.
-18:03:52: MovableObjectFactory for type 'StaticGeometry' registered.
-18:03:52: MovableObjectFactory for type 'Rectangle2D' registered.
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/RenderSystem_GL.so.14.5
-18:03:52: Installing plugin: GL RenderSystem
-18:03:52: OpenGL Rendering Subsystem created.
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_ParticleFX.so.14.5
-18:03:52: Installing plugin: ParticleFX
-18:03:52: Particle Emitter Type 'Point' registered
-18:03:52: Particle Emitter Type 'Box' registered
-18:03:52: Particle Emitter Type 'Ellipsoid' registered
-18:03:52: Particle Emitter Type 'Cylinder' registered
-18:03:52: Particle Emitter Type 'Ring' registered
-18:03:52: Particle Emitter Type 'HollowEllipsoid' registered
-18:03:52: Particle Affector Type 'LinearForce' registered
-18:03:52: Particle Affector Type 'ColourFader' registered
-18:03:52: Particle Affector Type 'ColourFader2' registered
-18:03:52: Particle Affector Type 'ColourImage' registered
-18:03:52: Particle Affector Type 'ColourInterpolator' registered
-18:03:52: Particle Affector Type 'Scaler' registered
-18:03:52: Particle Affector Type 'Rotator' registered
-18:03:52: Particle Affector Type 'DirectionRandomiser' registered
-18:03:52: Particle Affector Type 'DeflectorPlane' registered
-18:03:52: Particle Affector Type 'TextureAnimator' registered
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_BSPSceneManager.so.14.5
-18:03:52: Installing plugin: BSP Scene Manager
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Codec_STBI.so.14.5
-18:03:52: stb_image - v2.30 - public domain image loader
-18:03:52: Supported formats: jpeg,jpg,png,bmp,psd,tga,gif,pic,ppm,pgm,hdr
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_PCZSceneManager.so.14.5
-18:03:52: Installing plugin: Portal Connected Zone Scene Manager
-18:03:52: PCZone Factory Type 'ZoneType_Default' registered
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_OctreeZone.so.14.5
-18:03:52: Installing plugin: Octree Zone Factory
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_OctreeSceneManager.so.14.5
-18:03:52: Installing plugin: Octree Scene Manager
-18:03:52: Plugin successfully installed
-18:03:52: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_DotScene.so.14.5
-18:03:52: Installing plugin: DotScene Loader
-18:03:52: Plugin successfully installed
-18:03:52: *-*-* OGRE Initialising
-18:03:52: *-*-* Version 14.5.1 (Tsathoggua)
-18:03:52: Error: ScriptCompiler - invalid parameters in glTF2_PBR.material(37): overriding previous declarations of texture 'black.png' with different parameters
-18:03:52: Error: ScriptCompiler - unexpected token in DamagedHelmet.material(49): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DamagedHelmet.material(49): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(9): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(30): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(44): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(60): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(74): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(9): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(30): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(44): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(60): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(74): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in DepthShadowmap.material(44): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples-Advanced.material(172): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples-Advanced.material(194): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples-Advanced.material(172): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples-Advanced.material(194): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - invalid parameters in Examples-Water.material(130): overriding previous declarations of texture 'studio_garden.jpg' with different parameters
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(192): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(467): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(964): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(1234): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(1249): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(192): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(467): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(964): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(1234): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in Examples.material(1249): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(13): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(30): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(47): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(64): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(80): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(97): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(114): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(131): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(147): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(164): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(181): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(198): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(13): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(30): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(47): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(64): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(80): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(97): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(114): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(131): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(147): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(164): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(181): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HardwareSkinningShadow.material(198): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(12): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(36): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(61): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(12): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(36): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in HWInstancing.material(61): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(19): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(46): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(78): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(94): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(102): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(19): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(46): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(78): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(94): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in OffsetMapping.material(102): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in pssm.material(11): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in pssm.material(11): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(24): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(63): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(114): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(155): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(177): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(227): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(246): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(24): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(63): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(114): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(155): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(177): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(114): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(227): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in RTShaderSystem.material(246): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(12): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(27): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(42): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(66): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(89): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(113): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(12): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(27): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(42): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(66): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(89): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShaderInstancing.material(113): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in ShowVertexAttributes.material(114): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in ShowVertexAttributes.material(114): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(47): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(52): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(70): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(75): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(47): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(52): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(70): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in deferreddemo.material(75): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in GBuffer.material(7): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in GBuffer.material(7): token "rtshader_system" is not recognized
-18:03:52: Error: ScriptCompiler - unexpected token in triplanarReference.material(9): 'rtshader_system'. If this is a legacy script you must prepend the type (e.g. font, overlay).
-18:03:52: Error: ScriptCompiler - unexpected token in triplanarReference.material(9): token "rtshader_system" is not recognized
+11:53:39: Creating resource group General
+11:53:39: Creating resource group OgreInternal
+11:53:39: Creating resource group OgreAutodetect
+11:53:39: SceneManagerFactory for type 'DefaultSceneManager' registered.
+11:53:39: Registering ResourceManager for type Material
+11:53:39: Registering ResourceManager for type Mesh
+11:53:39: Registering ResourceManager for type Skeleton
+11:53:39: MovableObjectFactory for type 'ParticleSystem' registered.
+11:53:39: ArchiveFactory for type 'FileSystem' registered
+11:53:39: ArchiveFactory for type 'Zip' registered
+11:53:39: ArchiveFactory for type 'EmbeddedZip' registered
+11:53:39: DDS codec registering
+11:53:39: ETC codec registering
+11:53:39: ASTC codec registering
+11:53:39: Registering ResourceManager for type GpuProgram
+11:53:39: Registering ResourceManager for type Compositor
+11:53:39: MovableObjectFactory for type 'Entity' registered.
+11:53:39: MovableObjectFactory for type 'Light' registered.
+11:53:39: MovableObjectFactory for type 'BillboardSet' registered.
+11:53:39: MovableObjectFactory for type 'ManualObject' registered.
+11:53:39: MovableObjectFactory for type 'BillboardChain' registered.
+11:53:39: MovableObjectFactory for type 'RibbonTrail' registered.
+11:53:39: MovableObjectFactory for type 'StaticGeometry' registered.
+11:53:39: MovableObjectFactory for type 'Rectangle2D' registered.
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/RenderSystem_GL.so.14.5
+11:53:39: Installing plugin: GL RenderSystem
+11:53:39: OpenGL Rendering Subsystem created.
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_ParticleFX.so.14.5
+11:53:39: Installing plugin: ParticleFX
+11:53:39: Particle Emitter Type 'Point' registered
+11:53:39: Particle Emitter Type 'Box' registered
+11:53:39: Particle Emitter Type 'Ellipsoid' registered
+11:53:39: Particle Emitter Type 'Cylinder' registered
+11:53:39: Particle Emitter Type 'Ring' registered
+11:53:39: Particle Emitter Type 'HollowEllipsoid' registered
+11:53:39: Particle Affector Type 'LinearForce' registered
+11:53:39: Particle Affector Type 'ColourFader' registered
+11:53:39: Particle Affector Type 'ColourFader2' registered
+11:53:39: Particle Affector Type 'ColourImage' registered
+11:53:39: Particle Affector Type 'ColourInterpolator' registered
+11:53:39: Particle Affector Type 'Scaler' registered
+11:53:39: Particle Affector Type 'Rotator' registered
+11:53:39: Particle Affector Type 'DirectionRandomiser' registered
+11:53:39: Particle Affector Type 'DeflectorPlane' registered
+11:53:39: Particle Affector Type 'TextureAnimator' registered
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_BSPSceneManager.so.14.5
+11:53:39: Installing plugin: BSP Scene Manager
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Codec_STBI.so.14.5
+11:53:39: stb_image - v2.30 - public domain image loader
+11:53:39: Supported formats: jpeg,jpg,png,bmp,psd,tga,gif,pic,ppm,pgm,hdr
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_PCZSceneManager.so.14.5
+11:53:39: Installing plugin: Portal Connected Zone Scene Manager
+11:53:39: PCZone Factory Type 'ZoneType_Default' registered
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_OctreeZone.so.14.5
+11:53:39: Installing plugin: Octree Zone Factory
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_OctreeSceneManager.so.14.5
+11:53:39: Installing plugin: Octree Scene Manager
+11:53:39: Plugin successfully installed
+11:53:39: Loading library /media/projectos/projects/cpp/ogre-14.5.1/build/lib/Plugin_DotScene.so.14.5
+11:53:39: Installing plugin: DotScene Loader
+11:53:39: Plugin successfully installed
+11:53:39: *-*-* OGRE Initialising
+11:53:39: *-*-* Version 14.5.1 (Tsathoggua)
+11:53:39: Error: ScriptCompiler - invalid parameters in glTF2_PBR.material(37): overriding previous declarations of texture 'black.png' with different parameters
+11:53:39: Error: ScriptCompiler - invalid parameters in Examples-Water.material(130): overriding previous declarations of texture 'studio_garden.jpg' with different parameters
+11:53:39: GLSL/OceanVS
+GLSL/OceanFS
+ GLSL link result : 
+active samplers with a different type refer to the same texture image unit

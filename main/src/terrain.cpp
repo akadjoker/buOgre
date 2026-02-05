@@ -6,61 +6,7 @@
 
 namespace OgreTerrainBindings
 {
-    // createTerrainGroup(scene) - função global
-    int createTerrainGroup(Interpreter *vm, int argCount, Value *args)
-    {
-        if (argCount < 1)
-        {
-            Error("createTerrainGroup: requires scene");
-            return 0;
-        }
-
-        NativeClassInstance *sceneInstance = args[0].asNativeClassInstance();
-        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(sceneInstance->userData);
-
-        if (!scene)
-        {
-            Error("createTerrainGroup: invalid scene");
-            return 0;
-        }
-
-        // Create TerrainGlobalOptions (singleton)
-        Ogre::TerrainGlobalOptions *terrainGlobals = Ogre::TerrainGlobalOptions::getSingletonPtr();
-        if (!terrainGlobals)
-        {
-            terrainGlobals = new Ogre::TerrainGlobalOptions();
-        }
-
-        // Create TerrainGroup
-        Ogre::TerrainGroup *terrainGroup = new Ogre::TerrainGroup(
-            scene,
-            Ogre::Terrain::ALIGN_X_Z,
-            513,  // terrain size (must be 2^n + 1)
-            1000.0f  // world size
-        );
-
-        // Set default import settings
-        terrainGroup->setOrigin(Ogre::Vector3::ZERO);
-
-        // Get the TerrainGroup NativeClassDef
-        NativeClassDef *terrainClass = nullptr;
-        if (!vm->tryGetNativeClassDef("TerrainGroup", &terrainClass))
-        {
-            Error("TerrainGroup class not found in VM");
-            delete terrainGroup;
-            return 0;
-        }
-
-        // Create NativeClassInstance
-        Value terrainValue = vm->makeNativeClassInstance(false);
-        NativeClassInstance *instance = terrainValue.asNativeClassInstance();
-        instance->klass = terrainClass;
-        instance->userData = (void *)terrainGroup;
-
-        vm->push(terrainValue);
-        return 1;
-    }
-
+   
     // ========== TERRAIN GROUP METHODS ==========
 
     // defineTerrain(x, z, heightData)
@@ -189,19 +135,18 @@ namespace OgreTerrainBindings
 
     // ========== HELPER FUNCTIONS ==========
 
-    // configureTerrainDefaults(terrainGroup, light)
-    int configureTerrainDefaults(Interpreter *vm, int argCount, Value *args)
+    // configureDefaults(light)
+    int terrain_configureDefaults(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 2)
+        if (argCount < 1)
         {
-            Error("configureTerrainDefaults: requires terrainGroup and light");
+            Error("configureDefaults: requires light");
             return 0;
         }
 
-        NativeClassInstance *tgInstance = args[0].asNativeClassInstance();
-        Ogre::TerrainGroup *tg = static_cast<Ogre::TerrainGroup *>(tgInstance->userData);
+        Ogre::TerrainGroup *tg = static_cast<Ogre::TerrainGroup *>(data);
 
-        NativeClassInstance *lightInstance = args[1].asNativeClassInstance();
+        NativeClassInstance *lightInstance = args[0].asNativeClassInstance();
         Ogre::Light *light = static_cast<Ogre::Light *>(lightInstance->userData);
 
         if (!tg || !light) return 0;
@@ -218,42 +163,41 @@ namespace OgreTerrainBindings
         // Textures - usando paths relativos
         defaultimp.layerList.resize(3);
 
-        // Layer 0 - Dirt
-        defaultimp.layerList[0].worldSize = 100;
-        defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");
-        defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_normalheight.dds");
+        // Layer 0 - Ground
+        defaultimp.layerList[0].worldSize = 120;
+        defaultimp.layerList[0].textureNames.push_back("Ground37_diffspec.dds");
+        defaultimp.layerList[0].textureNames.push_back("Ground37_normheight.dds");
 
-        // Layer 1 - Grass
-        defaultimp.layerList[1].worldSize = 30;
-        defaultimp.layerList[1].textureNames.push_back("grass_green-01_diffusespecular.dds");
-        defaultimp.layerList[1].textureNames.push_back("grass_green-01_normalheight.dds");
+        // Layer 1 - Rock
+        defaultimp.layerList[1].worldSize = 70;
+        defaultimp.layerList[1].textureNames.push_back("Rock20_diffspec.dds");
+        defaultimp.layerList[1].textureNames.push_back("Rock20_normheight.dds");
 
-        // Layer 2 - Rock
+        // Layer 2 - Bricks
         defaultimp.layerList[2].worldSize = 200;
-        defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_diffusespecular.dds");
-        defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_normalheight.dds");
+        defaultimp.layerList[2].textureNames.push_back("Bricks076C_diffspec.dds");
+        defaultimp.layerList[2].textureNames.push_back("Bricks076C_normheight.dds");
 
         Info("Terrain defaults configured");
         return 0;
     }
 
-    // generateRandomTerrain(terrainGroup, x, z, seed)
-    int generateRandomTerrain(Interpreter *vm, int argCount, Value *args)
+    // generateRandom(x, z, seed)
+    int terrain_generateRandom(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 4)
+        if (argCount < 3)
         {
-            Error("generateRandomTerrain: requires terrainGroup, x, z, seed");
+            Error("generateRandom: requires x, z, seed");
             return 0;
         }
 
-        NativeClassInstance *tgInstance = args[0].asNativeClassInstance();
-        Ogre::TerrainGroup *tg = static_cast<Ogre::TerrainGroup *>(tgInstance->userData);
+        Ogre::TerrainGroup *tg = static_cast<Ogre::TerrainGroup *>(data);
 
         if (!tg) return 0;
 
-        long x = (long)args[1].asNumber();
-        long z = (long)args[2].asNumber();
-        int seed = (int)args[3].asNumber();
+        long x = (long)args[0].asNumber();
+        long z = (long)args[1].asNumber();
+        int seed = (int)args[2].asNumber();
 
         // Generate random heightmap
         Ogre::Terrain::ImportData &imp = tg->getDefaultImportSettings();
@@ -292,12 +236,48 @@ namespace OgreTerrainBindings
             (Ogre::uchar*)smoothData,
             size, size, 1,
             Ogre::PF_FLOAT32_R,
-            false  // Don't auto-delete
+            true  // auto-delete height data with the image
         );
 
-        tg->defineTerrain(x, z);
+        // Use the generated height image directly to avoid .dat dependency
+        tg->defineTerrain(x, z, imp.inputImage);
+
+        delete imp.inputImage;;
+        imp.inputImage = nullptr;
 
         Info("Random terrain generated at (%d, %d)", x, z);
+        return 0;
+    }
+
+    // loadHeightmap(x, z, filename)
+    int terrain_loadHeightmap(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 3)
+        {
+            Error("loadHeightmap: requires x, z, filename");
+            return 0;
+        }
+
+        Ogre::TerrainGroup *tg = static_cast<Ogre::TerrainGroup *>(data);
+        if (!tg) return 0;
+
+        long x = (long)args[0].asNumber();
+        long z = (long)args[1].asNumber();
+        const char *filename = args[2].asStringChars();
+
+        try
+        {
+            Ogre::Image *img = new Ogre::Image();
+            img->load(filename, "General");
+            tg->defineTerrain(x, z, img);
+            delete img;
+            Info("Heightmap loaded for terrain (%d, %d): %s", x, z, filename);
+        }
+        catch (Ogre::Exception &e)
+        {
+            Error("loadHeightmap failed: %s", e.what());
+        }
+
         return 0;
     }
 
@@ -306,7 +286,7 @@ namespace OgreTerrainBindings
         // Register TerrainGroup class
         NativeClassDef *terrain = vm.registerNativeClass(
             "TerrainGroup",
-            nullptr,  // No constructor - use createTerrainGroup()
+            nullptr,  // No constructor - use Scene.createTerrainGroup()
             nullptr,  // No destructor - managed externally
             0,        // no properties for now
             false
@@ -321,11 +301,9 @@ namespace OgreTerrainBindings
         vm.addNativeMethod(terrain, "setTerrainWorldSize", terrain_setTerrainWorldSize);
         vm.addNativeMethod(terrain, "getHeightAtWorldPosition", terrain_getHeightAtWorldPosition);
         vm.addNativeMethod(terrain, "update", terrain_update);
-
-        // Global functions
-        vm.registerNative("createTerrainGroup", createTerrainGroup, 1);
-        vm.registerNative("configureTerrainDefaults", configureTerrainDefaults, 2);
-        vm.registerNative("generateRandomTerrain", generateRandomTerrain, 4);
+        vm.addNativeMethod(terrain, "configureDefaults", terrain_configureDefaults);
+        vm.addNativeMethod(terrain, "generateRandom", terrain_generateRandom);
+        vm.addNativeMethod(terrain, "loadHeightmap", terrain_loadHeightmap);
 
         Info("Terrain bindings registered");
     }

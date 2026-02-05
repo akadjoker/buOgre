@@ -79,13 +79,24 @@ namespace OgreBillboardBindings
         return 0;
     }
 
+    
+
+
     // setBillboardColour(index, r, g, b, a)
     int bbset_setBillboardColour(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 5) return 0;
+        if (argCount < 5) 
+        {
+            Error("setBillboardColour: requires index and RGBA values");
+            return 0;
+        }
 
         Ogre::BillboardSet *bbSet = static_cast<Ogre::BillboardSet *>(data);
-        if (!bbSet) return 0;
+        if (!bbSet) 
+        {
+            Error("bbset_setBillboardColour: BillboardSet is null");
+            return 0;
+        }
 
         int index = (int)args[0].asNumber();
 
@@ -106,7 +117,11 @@ namespace OgreBillboardBindings
     // setBillboardDimensions(width, height)
     int bbset_setBillboardDimensions(Interpreter *vm, void *data, int argCount, Value *args)
     {
-        if (argCount < 2) return 0;
+        if (argCount < 2)
+        {
+            Error("setBillboardDimensions: requires width and height");
+            return 0;
+        }
 
         Ogre::BillboardSet *bbSet = static_cast<Ogre::BillboardSet *>(data);
         if (bbSet)
@@ -200,7 +215,7 @@ namespace OgreBillboardBindings
         );
 
         // Methods
-        vm.addNativeMethod(bbSet, "setMaterialName", bbset_setMaterialName);
+        vm.addNativeMethod(bbSet, "setMaterial", bbset_setMaterialName);
         vm.addNativeMethod(bbSet, "createBillboard", bbset_createBillboard);
         vm.addNativeMethod(bbSet, "setBillboardPosition", bbset_setBillboardPosition);
         vm.addNativeMethod(bbSet, "setBillboardColour", bbset_setBillboardColour);

@@ -1,0 +1,189 @@
+
+import math;
+ 
+ include "keys.bu";
+ include "constants.bu";
+ 
+
+def load_resources()
+{
+
+
+
+ 
+addResourceLocation("./media/Main", "FileSystem", "OgreInternal");
+
+addResourceLocation("./media/RTShaderLib", "FileSystem", "OgreInternal");
+addResourceLocation("./media/Terrain", "FileSystem", "OgreInternal");
+addResourceLocation("./media/packs/SdkTrays.zip", "Zip", "Essential");
+addResourceLocation("./media/packs/profiler.zip", "Zip", "Essential");
+
+
+addResourceLocation("./assets/PBR", "FileSystem","General");
+addResourceLocation("./assets/PBR/filament", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/GLSL", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/GLSL120", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/GLSL150", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/GLSL400", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/GLSLES", "FileSystem","General");
+addResourceLocation("./assets/materials/programs/SPIRV", "FileSystem","General");
+addResourceLocation("./assets/materials/scripts", "FileSystem","General");
+addResourceLocation("./assets/materials/textures", "FileSystem","General");
+addResourceLocation("./assets/materials/textures/terrain", "FileSystem","General");
+addResourceLocation("./assets/models", "FileSystem","General");
+addResourceLocation("./assets/particle", "FileSystem","General");
+addResourceLocation("./assets/DeferredShadingMedia", "FileSystem","General");
+addResourceLocation("./assets/DeferredShadingMedia/DeferredShading/post", "FileSystem","General");
+addResourceLocation("./assets/PCZAppMedia", "FileSystem","General");
+addResourceLocation("./assets/materials/scripts/SSAO", "FileSystem","General");
+addResourceLocation("./assets/materials/textures/SSAO", "FileSystem","General");
+addResourceLocation("./assets/volumeTerrain", "FileSystem","General");
+addResourceLocation("./assets/CSMShadows", "FileSystem","General");
+addResourceLocation("./assets/packs/Sinbad.zip", "Zip", "General");
+addResourceLocation("./assets/packs/skybox.zip", "Zip", "General");
+addResourceLocation("./assets/packs/skybox.zip", "Zip", "General");
+addResourceLocation("./assets/packs/cubemaps.zip", "Zip", "General");
+addResourceLocation("./assets/packs/cubemapsJS.zip", "Zip", "General");
+ 
+ 
+   
+initialiseAllResourceGroups();
+}
+
+CreateEngine(1024, 720, "FPS Controller", 1, false, true);
+
+ 
+load_resources();
+
+    
+var scene = CreateScene();
+var rootNode = scene.getRoot();
+var camera = rootNode.createChild();
+
+// ========== CONFIGURAÇÃO INICIAL ==========
+scene.setAmbientLight(0.2, 0.2, 0.2);
+
+// LUZ DIRECIONAL (importante para shadows)
+var sun = scene.createLight("Sun", 1);  // 1 = directional
+sun.setDiffuse(1.0, 0.95, 0.9);
+sun.setSpecular(1.0, 1.0, 1.0);
+
+var sunNode = rootNode.createChild();
+sunNode.attachObject(sun);
+sunNode.setDirection(0.3, -0.75, 0.5,TS_LOCAL,0,0,-1);  // Aponta para baixo
+
+ 
+
+var tg = scene.createTerrainGroup();
+tg.configureDefaults(sun);
+tg.loadHeightmap(0, 0, "terrain.png");
+tg.loadAllTerrains();
+tg.freeTemporaryResources();
+
+
+// CÂMERA
+var cam = scene.createCamera("MainCam");
+cam.setNearClip(0.1);
+camera.attachObject(cam);
+camera.setPosition(0, 30, 80);
+camera.lookAt(0, 5, 0, TS_WORLD);
+
+var viewport = Viewport(cam);
+viewport.setBackgroundColor(0.2, 0.3, 0.4);
+ 
+
+ 
+
+// ground removido para não tapar o terreno
+
+  
+ 
+var currentShadowType = 0;
+ 
+
+def setupShadows(type)
+{
+   
+
+    scene.setShadowTechnique(type);
+
+    if (type == 3 || type == 4)  // TEXTURE shadows
+    {
+        
+        scene.setShadowTextureSize(2048);
+        scene.setShadowTextureCount(4);
+        scene.setShadowFarDistance(300.0);
+        scene.setShadowDirLightTextureOffset(0.6);
+        scene.setShadowTextureSelfShadow(true);
+        scene.setShadowCasterRenderBackFaces(false);
+        scene.setShadowColour(0.5, 0.5, 0.5);
+    }
+   
+}
+ 
+ 
+
+ 
+
+// Create FPS controller
+ var fpsController = FPSController(camera);
+ fpsController.moveSpeed = 150.0;  // velocidade de movimento
+fpsController.mouseSensitivity = 0.15;  // sensibilidade do mouse
+
+currentShadowType = 0;
+setupShadows(currentShadowType);
+
+// Skybox
+scene.setSkyBox(true, "Examples/CloudyNoonSkyBox", 5000.0);
+
+ 
+ 
+    // Mouse tracking
+    var lastMouseX = getMouseX();
+    var lastMouseY = getMouseY();
+    var time=0.0;
+
+    while(EngineCanUpdate())
+    {
+        var deltaTime = getDeltaTime();
+        var fps = getFPS();
+        time = time + deltaTime;
+
+        // Update movement flags based on keyboard input
+        fpsController.setMoveForward(isKeyDown(KEY_W));
+        fpsController.setMoveBackward(isKeyDown(KEY_S));
+        fpsController.setMoveLeft(isKeyDown(KEY_A));
+        fpsController.setMoveRight(isKeyDown(KEY_D));
+        fpsController.setMoveUp(isKeyDown(KEY_Q));
+        fpsController.setMoveDown(isKeyDown(KEY_Z));
+
+    if (isKeyDown(KEY_1)) { currentShadowType = 0; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_2)) { currentShadowType = 1; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_3)) { currentShadowType = 2; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_4)) { currentShadowType = 3; setupShadows(currentShadowType); }
+    if (isKeyDown(KEY_5)) { currentShadowType = 4; setupShadows(currentShadowType); }
+
+        // Calculate mouse delta
+        var mouseX = getMouseX();
+        var mouseY = getMouseY();
+        var mouseDeltaX = 0;
+        var mouseDeltaY = 0;
+
+        if (isMouseButtonDown(MOUSE_LEFT))
+        {
+            mouseDeltaX = mouseX - lastMouseX;
+            mouseDeltaY = mouseY - lastMouseY;
+        }
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+
+        // Update controller
+        fpsController.update(deltaTime, -mouseDeltaX, mouseDeltaY);
+       
+  
+
+       UpdateEngine(deltaTime);
+    }
+    ReleaseEngine();
+

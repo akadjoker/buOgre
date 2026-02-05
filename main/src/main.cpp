@@ -279,6 +279,15 @@ int native_create_engine(Interpreter *vm, int argCount, Value *args)
 
         overlaySystem = new Ogre::OverlaySystem();
 
+        if (Ogre::RTShader::ShaderGenerator::initialize())
+        {
+            Info("✓ RTShaderSystem initialized");
+        }
+        else
+        {
+            Error("RTShaderSystem init failed");
+        }
+
         vm->pushBool(true);
     }
     catch (const std::exception &e)

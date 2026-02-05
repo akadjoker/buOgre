@@ -1,5 +1,9 @@
 #include "bindings.hpp"
+#include "lensflare.hpp"
 #include <OgreOverlaySystem.h>
+#include <OgreTerrain.h>
+#include <OgreTerrainGroup.h>
+#include <OgreRTShaderSystem.h>
 
 extern Ogre::Root *mRoot;
 extern Ogre::OverlaySystem *overlaySystem;
@@ -17,6 +21,10 @@ namespace OgreSceneBindings
         Ogre::SceneManager *scene = mRoot->createSceneManager();
 
         scene->addRenderQueueListener(overlaySystem);
+        if (Ogre::RTShader::ShaderGenerator::getSingletonPtr())
+        {
+            Ogre::RTShader::ShaderGenerator::getSingleton().addSceneManager(scene);
+        }
 
         return scene;
     }
@@ -618,33 +626,6 @@ namespace OgreSceneBindings
         }
         Ogre::SceneManager *scene = mRoot->createSceneManager();
 
-        // // ========== CONFIGURAÇÃO SIMPLES DE TEXTURE SHADOWS ==========
-        // // Usar TEXTURE_MODULATIVE (não INTEGRATED) - mais simples
-        // scene->setShadowTechnique(Ogre::SHADOWTYPE_TEXTURE_MODULATIVE);
-
-        // // Formato normal RGB (não depth)
-        // scene->setShadowTexturePixelFormat(Ogre::PF_X8R8G8B8);
-
-        // // Configurações básicas
-        // scene->setShadowColour(Ogre::ColourValue(0.5, 0.5, 0.5));
-        // scene->setShadowTextureSize(2048);     // Maior para melhor qualidade
-        // scene->setShadowTextureCount(3);       // 3 texturas para CSM
-        // scene->setShadowDirLightTextureOffset(0.6);  // Anti shadow-acne
-        // scene->setShadowFarDistance(300.0);    // Distância maior
-        // scene->setShadowTextureSelfShadow(true);
-        // scene->setShadowCasterRenderBackFaces(false);
-
-        // // SEM LiSPSM - usar default (mais simples e funcional)
-        // // scene->setShadowCameraSetup(Ogre::DefaultShadowCameraSetup::create());
-
-        // // LUZ DIRECIONAL (não point) - funciona melhor para texture shadows
-        // Ogre::Light* light = scene->createLight(Ogre::Light::LT_DIRECTIONAL);
-        // light->setDiffuseColour(1.0f, 0.95f, 0.9f);
-        // light->setSpecularColour(Ogre::ColourValue::White);
-
-        // Ogre::SceneNode* lightNode = scene->getRootSceneNode()->createChildSceneNode();
-        // lightNode->attachObject(light);
-        // lightNode->setDirection(0.3f, -0.75f, 0.5f);  // Aponta para baixo
 
 
         scene->addRenderQueueListener(overlaySystem);
@@ -1019,7 +1000,15 @@ namespace OgreSceneBindings
             const char *material = argCount >= 6 ? args[5].asStringChars() : "BaseWhiteNoLighting";
             const char *group = nullptr;
             if (argCount >= 7)
+            {
+                if (args[6].isString() == false)
+                {
+                    Error("createPlane: group must be a string");
+                    vm->pushNil();
+                    return 1;
+                }
                 group = args[6].asStringChars();
+            }
 
             Ogre::ManualObject *manual = sm->createManualObject(Ogre::String(name) + "_manual");
             if (!manual)
@@ -1074,7 +1063,15 @@ namespace OgreSceneBindings
             const char *material = argCount >= 6 ? args[5].asStringChars() : "BaseWhiteNoLighting";
             const char *group = nullptr;
             if (argCount >= 7)
+            {
+                if (args[6].isString() == false)
+                {
+                    Error("createCapsule: group must be a string");
+                    vm->pushNil();
+                    return 1;
+                }
                 group = args[6].asStringChars();
+            }
 
             Ogre::ManualObject *manual = sm->createManualObject(Ogre::String(name) + "_manual");
             if (!manual)
@@ -1278,6 +1275,114 @@ namespace OgreSceneBindings
         }
     }
 
+    // createTerrainGroup()
+    int scene_createTerrainGroup(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+        if (!scene)
+        {
+            Error("createTerrainGroup: invalid scene");
+            vm->pushNil();
+            return 1;
+        }
+
+        // Create TerrainGlobalOptions (singleton)
+        Ogre::TerrainGlobalOptions *terrainGlobals = Ogre::TerrainGlobalOptions::getSingletonPtr();
+        if (!terrainGlobals)
+        {
+            terrainGlobals = new Ogre::TerrainGlobalOptions();
+        }
+
+        // Create TerrainGroup
+        Ogre::TerrainGroup *terrainGroup = new Ogre::TerrainGroup(
+            scene,
+            Ogre::Terrain::ALIGN_X_Z,
+            513,      // terrain size (must be 2^n + 1)
+            1000.0f   // world size
+        );
+
+        terrainGroup->setOrigin(Ogre::Vector3::ZERO);
+
+        // Get the TerrainGroup NativeClassDef
+        NativeClassDef *terrainClass = nullptr;
+        if (!vm->tryGetNativeClassDef("TerrainGroup", &terrainClass))
+        {
+            Error("TerrainGroup class not found in VM");
+            delete terrainGroup;
+            vm->pushNil();
+            return 1;
+        }
+
+        Value terrainValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *instance = terrainValue.asNativeClassInstance();
+        instance->klass = terrainClass;
+        instance->userData = (void *)terrainGroup;
+
+        vm->push(terrainValue);
+        return 1;
+    }
+
+    int scene_createLensFlare(Interpreter *vm, void *data, int argCount, Value *args)
+    {
+        if (argCount < 4)
+        {
+            Error("createLensFlare requires: camera, lightX, lightY, lightZ");
+            vm->pushNil();
+            return 1;
+        }
+
+ 
+        
+
+        Ogre::SceneManager *scene = static_cast<Ogre::SceneManager *>(data);
+        if (!scene)
+        {
+            Error("createLensFlare: invalid scene");
+            vm->pushNil();
+            return 1;
+        }
+
+        NativeClassInstance *cameraInst = args[0].asNativeClassInstance();
+        Ogre::Camera *camera = static_cast<Ogre::Camera *>(cameraInst->userData);
+        if (!camera)
+        {
+            Error("createLensFlare: invalid camera node");
+            vm->pushNil();
+            return 1;
+        }
+ 
+       
+ 
+        float x = (float)args[1].asNumber();
+        float y = (float)args[2].asNumber();
+        float z = (float)args[3].asNumber();
+        Ogre::Vector3 lightPos(x, y, z);
+
+        LensFlare *lensFlare = new LensFlare(lightPos,camera, scene);
+
+
+      
+
+
+        NativeClassDef *lensFlareClass = nullptr;
+        if (!vm->tryGetNativeClassDef("LensFlare", &lensFlareClass))
+        {
+            Error("LensFlare class not found in VM");
+            delete lensFlare;
+            vm->pushNil();
+            return 1;
+        }
+
+        Value lensFlareValue = vm->makeNativeClassInstance(false);
+        NativeClassInstance *instance = lensFlareValue.asNativeClassInstance();
+        instance->klass = lensFlareClass;
+        instance->userData = (void *)lensFlare;
+
+        vm->push(lensFlareValue);
+        return 1;
+    }
+
+
     void registerAll(Interpreter &vm)
     {
         NativeClassDef *sc = vm.registerNativeClass(
@@ -1303,6 +1408,8 @@ namespace OgreSceneBindings
         vm.addNativeMethod(sc, "createRibbonTrail", createRibbonTrail);
         vm.addNativeMethod(sc, "createParticleSystem", createParticleSystem);
         vm.addNativeMethod(sc, "createBillboardSet", createBillboardSet);
+        vm.addNativeMethod(sc, "createTerrainGroup", scene_createTerrainGroup);
+        vm.addNativeMethod(sc, "createLensFlare", scene_createLensFlare);
 
         vm.addNativeMethod(sc, "setAmbientLight", scene_setAmbientLight);
         vm.addNativeMethod(sc, "setShadowTechnique", scene_setShadowTechnique);
